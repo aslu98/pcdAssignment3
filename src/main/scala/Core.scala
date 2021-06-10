@@ -22,15 +22,25 @@ object Main extends App {
 }
 
 object Coordinator {
+
   sealed trait CoordMsg
+
   final case class WordsToDiscard(wordsToDiscard: List[String]) extends CoordMsg
+
   final case class ExplorerDone(explorer: ActorRef[FolderExplorerMsg], totDocs: Int) extends CoordMsg
-  final case class StartLoader(f:File, id: Int) extends CoordMsg
+
+  final case class StartLoader(f: File, id: Int) extends CoordMsg
+
   final case class LoaderDone() extends CoordMsg
+
   final case class StartAnalyser(doc: PDDocument, p: Int, totP: Int, stripper: PDFTextStripper, docId: Int, docLoader: ActorRef[DocLoadMsg]) extends CoordMsg
+
   final case class MapUpdate(map: Map[String, Int]) extends CoordMsg
+
   final case class AnalyzerDone() extends CoordMsg
+
   final case class Stop() extends CoordMsg
+
   final case class Done() extends CoordMsg
 
   def apply(n: Int, dirpath: String, filepath: String): Behavior[CoordMsg] = {
@@ -48,7 +58,7 @@ object Coordinator {
         if (dir.isDirectory) {
           val explorerRef = context.spawn(FoldersExplorer(dir.listFiles().length, 0, 0), "folder-explorer")
           explorerRef ! FoldersExplorer.Explore(dir.listFiles().toList, context.self)
-          beforeAnalysing(context, buffer, 0, explorerDone = false, 0, 0, 0, 0)
+          beforeAnalysing(context, buffer, n, explorerDone = false, 0, 0, 0, 0)
         } else {
           Behaviors.stopped
         }
@@ -56,30 +66,39 @@ object Coordinator {
     }
   }
 
-  private def merge[K](m1:Map[K, Int], m2:Map[K, Int]): Map[K, Int] =
-    ((m1.keySet ++ m2.keySet) map { (i:K) => (i -> (m1.get(i).getOrElse(0) + m2.get(i).getOrElse(0)))}).toMap
+  private def merge[K](m1: Map[K, Int], m2: Map[K, Int]): Map[K, Int] =
+    ((m1.keySet ++ m2.keySet) map { (i: K) => i -> (m1.getOrElse(i, 0) + m2.getOrElse(i, 0)) }).toMap
+
+  private def startLoader(context: ActorContext[CoordMsg], f: File, id: Int): Unit = {
+    val loaderRef = context.spawn(DocLoader(f, id, context.self), "doc-loader-" + id)
+    loaderRef ! DocLoader.Load()
+  }
+
+  private def loaderDone(context: ActorContext[CoordMsg], explorerDone: Boolean, totDocs: Int, loadersDone: Int): Unit = {
+      if(explorerDone && totDocs == loadersDone) {
+        context.log.info("ALL LOADERS DONE")
+        context.self ! AnalyzerDone()
+      } else {
+        context.log.info(s"LOAD tot: $totDocs, now: $loadersDone")
+      }
+}
 
   private def beforeAnalysing(context: ActorContext[CoordMsg], buffer: StashBuffer[CoordMsg],
                     N: Int, explorerDone: Boolean, totDocs: Int, loadersDone: Int,
                     totAnalyzers: Int, analyzersDone: Int): Behavior[CoordMsg] = {
     Behaviors.receiveMessage {
       case WordsToDiscard(wordsToDiscard) =>
+        context.log.info("words to discard loaded")
         buffer.unstashAll(analysingBehaviour(context, buffer, N, wordsToDiscard, explorerDone, totDocs, loadersDone, totAnalyzers, analyzersDone, Map.empty[String, Int]))
       case ExplorerDone(explorer: ActorRef[FolderExplorerMsg], ndocs: Int) =>
         context.log.info(s"explorer done $ndocs")
         explorer ! FoldersExplorer.Done()
         beforeAnalysing(context, buffer, N, explorerDone = true, ndocs, loadersDone, totAnalyzers, analyzersDone)
       case StartLoader(f: File, id: Int) =>
-        val loaderRef = context.spawn(DocLoader(f, id, context.self), "doc-loader-" + id)
-        loaderRef ! DocLoader.Load()
+        startLoader(context, f, id)
         Behaviors.same
       case LoaderDone() =>
-        if (explorerDone && totDocs == loadersDone + 1) {
-          context.log.info("ALL LOADERS DONE")
-          context.self ! AnalyzerDone()
-        } else {
-          context.log.info(s"LOAD tot: $totDocs, now: ${loadersDone + 1}")
-        }
+        loaderDone(context, explorerDone, totDocs, loadersDone + 1)
         beforeAnalysing(context, buffer, N, explorerDone, totDocs, loadersDone + 1, totAnalyzers, analyzersDone + 1)
       case Stop() => Behaviors.stopped
       case Done() => Behaviors.stopped
@@ -98,16 +117,10 @@ object Coordinator {
         explorer ! FoldersExplorer.Done()
         analysingBehaviour(context, buffer, N, wordsToDiscard, explorerDone = true, ndocs, loadersDone, totAnalyzers, analyzersDone, wordFreqMap)
       case StartLoader(f: File, id: Int) =>
-        val loaderRef = context.spawn(DocLoader(f, id, context.self), "doc-loader-" + id)
-        loaderRef ! DocLoader.Load()
+        startLoader(context, f, id)
         Behaviors.same
       case LoaderDone() =>
-        if (explorerDone && totDocs == loadersDone + 1) {
-          context.log.info("ALL LOADERS DONE")
-          context.self ! AnalyzerDone()
-        } else {
-          context.log.info(s"LOAD tot: $totDocs, now: ${loadersDone + 1}")
-        }
+        loaderDone(context, explorerDone, totDocs, loadersDone + 1)
         analysingBehaviour(context, buffer, N, wordsToDiscard, explorerDone, totDocs, loadersDone + 1, totAnalyzers, analyzersDone + 1, wordFreqMap)
       case StartAnalyser(doc, p, totP, stripper, docId, docLoaderRef) =>
         val selfRef = context.self
@@ -116,7 +129,7 @@ object Coordinator {
         Future {
           stripper.setStartPage(p)
           stripper.setEndPage(p)
-          val words: Array[String] = stripper.getText(doc).split(Main.REGEX).filter(w => wordsToDiscard.contains(w))
+          val words: Array[String] = stripper.getText(doc).split(Main.REGEX).filter(w => !wordsToDiscard.contains(w))
           (p < totP, words)
         }.onComplete {
           case Success((true, w)) =>
@@ -126,30 +139,25 @@ object Coordinator {
             } else {
               context.self ! AnalyzerDone()
             }
-          case Success((false, _)) => {
+          case Success((false, _)) =>
             docLoaderRef ! DocLoader.CloseDoc(doc)
-            context.self ! LoaderDone()
-          };
+            context.self ! LoaderDone();
           case Failure(exception) => print(s"Exception in Stripper $docId at page $p, totPages $totP ($exception), dad ${selfRef.path}. \n")
         }
         analysingBehaviour(context, buffer, N, wordsToDiscard, explorerDone, totDocs, loadersDone, totAnalyzers + 1, analyzersDone, wordFreqMap)
       case MapUpdate(map) =>
-        var updatedMap: Map[String, Int] = Map.empty
-        if (map.nonEmpty) {
-          updatedMap = merge(map, wordFreqMap)
-          val sortedMap = updatedMap.toList.sortBy(_._2).reverse.slice(0, N)
-          /*send update to view*/
-        } else {
-          updatedMap = wordFreqMap
-        }
+        val updatedMap = merge(map, wordFreqMap)
+        val sortedMap = updatedMap.toList.sortBy(_._2).reverse.slice(0, N)
+        /*send update to view*/
         analysingBehaviour(context, buffer, N, wordsToDiscard, explorerDone, totDocs, loadersDone, totAnalyzers, analyzersDone, updatedMap)
-      case AnalyzerDone() => {
+      case AnalyzerDone() =>
         if (explorerDone && totDocs == loadersDone && totAnalyzers == analyzersDone) {
           context.log.info("ALL ANALYZERS DONE")
+          val sortedMap = wordFreqMap.toList.sortBy(_._2).reverse.slice(0, N)
+          context.log.info(sortedMap.toString())
           //send done msg to view
         }
         analysingBehaviour(context, buffer, N, wordsToDiscard, explorerDone, totDocs, loadersDone, totAnalyzers, analyzersDone + 1, wordFreqMap)
-      }
       case _ => Behaviors.stopped
     }
 }
@@ -286,7 +294,7 @@ object TextAnalyzer {
           context.self ! Analyse(words, pos+1)
         } else {
           coordRef ! Coordinator.MapUpdate(updatedMap)
-          coordRef ! Coordinator.AnalyzerDone()
+          if (map.nonEmpty) coordRef ! Coordinator.AnalyzerDone()
         }
         TextAnalyzer(updatedMap, coordRef)
       case _ => Behaviors.stopped
