@@ -75,12 +75,12 @@ object Coordinator {
   }
 
   private def loaderDone(context: ActorContext[CoordMsg], explorerDone: Boolean, totDocs: Int, loadersDone: Int): Unit = {
-      if(explorerDone && totDocs == loadersDone) {
-        context.log.info("ALL LOADERS DONE")
-        context.self ! AnalyzerDone()
-      } else {
-        context.log.info(s"LOAD tot: $totDocs, now: $loadersDone")
-      }
+    if(explorerDone && totDocs == loadersDone) {
+      context.log.info("ALL LOADERS DONE")
+      context.self ! AnalyzerDone()
+    } else {
+      context.log.info(s"LOAD tot: $totDocs, now: $loadersDone")
+    }
 }
 
   private def beforeAnalysing(context: ActorContext[CoordMsg], buffer: StashBuffer[CoordMsg],
@@ -146,8 +146,15 @@ object Coordinator {
         }
         analysingBehaviour(context, buffer, N, wordsToDiscard, explorerDone, totDocs, loadersDone, totAnalyzers + 1, analyzersDone, wordFreqMap)
       case MapUpdate(map) =>
-        val updatedMap = merge(map, wordFreqMap)
-        val sortedMap = updatedMap.toList.sortBy(_._2).reverse.slice(0, N)
+        var updatedMap: Map[String, Int] = Map.empty
+        if (map.nonEmpty) {
+          updatedMap = merge(map, wordFreqMap)
+          val sortedMap = updatedMap.toList.sortBy(_._2).reverse.slice(0, N)
+          /*send update to view*/
+        } else {
+          context.log.info("empty map")
+          updatedMap = wordFreqMap
+        }
         /*send update to view*/
         analysingBehaviour(context, buffer, N, wordsToDiscard, explorerDone, totDocs, loadersDone, totAnalyzers, analyzersDone, updatedMap)
       case AnalyzerDone() =>
@@ -294,7 +301,7 @@ object TextAnalyzer {
           context.self ! Analyse(words, pos+1)
         } else {
           coordRef ! Coordinator.MapUpdate(updatedMap)
-          if (map.nonEmpty) coordRef ! Coordinator.AnalyzerDone()
+          coordRef ! Coordinator.AnalyzerDone()
         }
         TextAnalyzer(updatedMap, coordRef)
       case _ => Behaviors.stopped
