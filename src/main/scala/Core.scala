@@ -1,5 +1,6 @@
 import Main.{Done, Msg, PAGES_EACH_ANALYZER, REGEX, Stop}
 import ViewRender.Init
+import akka.actor.InvalidActorNameException
 import akka.actor.typed.scaladsl.{ActorContext, Behaviors, StashBuffer}
 import akka.actor.typed.{ActorRef, ActorSystem, Behavior, DispatcherSelector}
 import org.apache.pdfbox.pdmodel.PDDocument
@@ -9,7 +10,7 @@ import java.io.{BufferedReader, File, FileReader, IOException}
 import scala.collection.immutable
 import scala.collection.immutable.HashMap
 import scala.concurrent.{ExecutionContext, Future}
-import scala.util.{Failure, Success}
+import scala.util.{Failure, Random, Success}
 
 object Main extends App {
   trait Msg
@@ -118,7 +119,15 @@ object Coordinator {
         loaderDone(context, explorerDone, totDocs, loadersDone + 1)
         analyzingBehaviour(context, buffer, N, wordsToDiscard, explorerDone, totDocs, loadersDone + 1, totAnalyzers, analyzersDone + 1, wordFreqMap, totWords, viewRef)
       case StartAnalyzer(doc, p, totP, stripper, docId, docLoaderRef) =>
-        val analyzerRef = context.spawn(TextAnalyzer(HashMap[String, Int](), context.self), "text-analyzer-" + docId + "-p" + p)
+        val name = "text-analyzer-" + docId + "-p" + p
+        val analyzerRef =
+          try {
+            context.spawn(TextAnalyzer(HashMap[String, Int](), context.self), name)
+          } catch  {
+            case _: InvalidActorNameException =>
+              context.children.asInstanceOf[Iterable[ActorRef[Msg]]].filter(child => child.path.name == name).foreach(child => child ! Stop())
+              context.spawn(TextAnalyzer(HashMap[String, Int](), context.self), name)
+          }
         implicit val executionContext: ExecutionContext = context.system.dispatchers.lookup(DispatcherSelector.fromConfig("blocking-dispatcher"))
         Future {
           stripper.setStartPage(p)
