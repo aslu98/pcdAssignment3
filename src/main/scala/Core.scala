@@ -28,7 +28,7 @@ object Main extends App {
 object Coordinator {
   sealed trait CoordMsg extends Msg
   final case class WordsToDiscard(wordsToDiscard: List[String]) extends CoordMsg
-  final case class ExplorerDone(explorer: ActorRef[Msg], totDocs: Int) extends CoordMsg
+  final case class ExplorerDone(totDocs: Int) extends CoordMsg
   final case class StartLoader(f: File, id: Int) extends CoordMsg
   final case class LoaderDone() extends CoordMsg
   final case class StartAnalyzer(p: Int, docId: Int, words: Array[String]) extends CoordMsg
@@ -36,7 +36,7 @@ object Coordinator {
   final case class AnalyzerDone() extends CoordMsg
   final case class Restart(n: Int, dirpath: String, filepath: String, viewRef: ActorRef[Msg]) extends CoordMsg
 
-  private def setInputs(context: ActorContext[Msg], buffer: StashBuffer[Msg],
+  private def init(context: ActorContext[Msg], buffer: StashBuffer[Msg],
                         n: Int, dirpath: String, filepath: String, viewRef: ActorRef[Msg]): Behavior[Msg] ={
     context.log.info("N: {}", n)
     context.log.info("dirpath: {}", dirpath)
@@ -75,9 +75,7 @@ object Coordinator {
 
   def apply(n: Int, dirpath: String, filepath: String, viewRef: ActorRef[Msg]): Behavior[Msg] = {
     Behaviors.withStash(100) { buffer =>
-      Behaviors.setup[Msg] { context =>
-        setInputs(context, buffer, n, dirpath, filepath, viewRef)
-      }
+      Behaviors.setup[Msg] { context => init(context, buffer, n, dirpath, filepath, viewRef) }
     }
   }
 
@@ -87,8 +85,8 @@ object Coordinator {
     Behaviors.receiveMessage {
       case WordsToDiscard(wordsToDiscard) =>
         context.log.info("words to discard loaded")
-        buffer.unstashAll(analyzingBehaviour(context, buffer, N, wordsToDiscard, explorerDone, totDocs, loadersDone, totAnalyzers, analyzersDone, Map.empty[String, Int], 0, viewRef))
-      case ExplorerDone(explorer: ActorRef[Msg], ndocs: Int) =>
+        buffer.unstashAll(analyzing(context, buffer, N, wordsToDiscard, explorerDone, totDocs, loadersDone, totAnalyzers, analyzersDone, Map.empty[String, Int], 0, viewRef))
+      case ExplorerDone(ndocs: Int) =>
         context.log.info(s"explorer done $ndocs")
         beforeAnalyzing(context, buffer, N, explorerDone = true, ndocs, loadersDone, totAnalyzers, analyzersDone, viewRef)
       case StartLoader(f: File, id: Int) =>
@@ -105,19 +103,19 @@ object Coordinator {
     }
   }
 
-  private def analyzingBehaviour(context: ActorContext[Msg], buffer: StashBuffer[Msg],
+  private def analyzing(context: ActorContext[Msg], buffer: StashBuffer[Msg],
                                  N: Int, wordsToDiscard: List[String], explorerDone: Boolean, totDocs: Int, loadersDone: Int,
                                  totAnalyzers: Int, analyzersDone: Int, wordFreqMap: Map[String, Int], totWords: Int, viewRef: ActorRef[Msg]):Behavior[Msg] =
     Behaviors.receiveMessage {
-      case ExplorerDone(explorer: ActorRef[Msg], ndocs: Int) =>
+      case ExplorerDone(ndocs: Int) =>
         context.log.info(s"explorer done $ndocs")
-        analyzingBehaviour(context, buffer, N, wordsToDiscard, explorerDone = true, ndocs, loadersDone, totAnalyzers, analyzersDone, wordFreqMap, totWords, viewRef)
+        analyzing(context, buffer, N, wordsToDiscard, explorerDone = true, ndocs, loadersDone, totAnalyzers, analyzersDone, wordFreqMap, totWords, viewRef)
       case StartLoader(f: File, id: Int) =>
         startLoader(context, f, id)
         Behaviors.same
       case LoaderDone() =>
         loaderDone(context, explorerDone, totDocs, loadersDone + 1)
-        analyzingBehaviour(context, buffer, N, wordsToDiscard, explorerDone, totDocs, loadersDone + 1, totAnalyzers, analyzersDone, wordFreqMap, totWords, viewRef)
+        analyzing(context, buffer, N, wordsToDiscard, explorerDone, totDocs, loadersDone + 1, totAnalyzers, analyzersDone, wordFreqMap, totWords, viewRef)
       case StartAnalyzer(p, docId, words) =>
         val name = "text-analyzer-" + docId + "-p" + p
         val analyzerRef =
@@ -129,7 +127,7 @@ object Coordinator {
               context.spawn(WordsAnalyzer(HashMap[String, Int](), context.self), name + "new")
           }
         analyzerRef ! WordsAnalyzer.Analyze(words.filter(w => !wordsToDiscard.contains(w)), 0)
-        analyzingBehaviour(context, buffer, N, wordsToDiscard, explorerDone, totDocs, loadersDone, totAnalyzers + 1, analyzersDone, wordFreqMap, totWords, viewRef)
+        analyzing(context, buffer, N, wordsToDiscard, explorerDone, totDocs, loadersDone, totAnalyzers + 1, analyzersDone, wordFreqMap, totWords, viewRef)
       case MapUpdate(map, analyzerWords) =>
         var updatedMap: Map[String, Int] = Map.empty
         if (map.nonEmpty) {
@@ -140,7 +138,7 @@ object Coordinator {
           context.log.info("empty map")
           updatedMap = wordFreqMap
         }
-        analyzingBehaviour(context, buffer, N, wordsToDiscard, explorerDone, totDocs, loadersDone, totAnalyzers, analyzersDone, updatedMap, totWords + analyzerWords, viewRef)
+        analyzing(context, buffer, N, wordsToDiscard, explorerDone, totDocs, loadersDone, totAnalyzers, analyzersDone, updatedMap, totWords + analyzerWords, viewRef)
       case AnalyzerDone() =>
         if (explorerDone && totDocs == loadersDone && totAnalyzers == analyzersDone) {
           context.log.info("ALL ANALYZERS DONE")
@@ -149,7 +147,7 @@ object Coordinator {
           viewRef ! Done()
           context.self ! Done()
         }
-        analyzingBehaviour(context, buffer, N, wordsToDiscard, explorerDone, totDocs, loadersDone, totAnalyzers, analyzersDone + 1, wordFreqMap, totWords, viewRef)
+        analyzing(context, buffer, N, wordsToDiscard, explorerDone, totDocs, loadersDone, totAnalyzers, analyzersDone + 1, wordFreqMap, totWords, viewRef)
       case _ =>
         context.children.asInstanceOf[Iterable[ActorRef[Msg]]].foreach(child => child ! Stop())
         stopped(context, buffer)
@@ -158,8 +156,7 @@ object Coordinator {
 
   private def stopped(context: ActorContext[Msg], buffer: StashBuffer[Msg]) : Behavior[Msg] =
     Behaviors.receiveMessage {
-          case Restart(n, dirpath, filepath, viewRef) =>
-            setInputs(context, buffer, n, dirpath, filepath, viewRef)
+          case Restart(n, dirpath, filepath, viewRef) => init(context, buffer, n, dirpath, filepath, viewRef)
           case _ => Behaviors.same
     }
 }
@@ -214,7 +211,7 @@ object FoldersExplorer {
         }
         else {
           if (newpresent == newdone) {
-            coordRef ! Coordinator.ExplorerDone(context.self, newndocs)
+            coordRef ! Coordinator.ExplorerDone(newndocs)
             context.self ! Done()
           }
         }
