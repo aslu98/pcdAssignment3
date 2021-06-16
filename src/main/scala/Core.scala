@@ -1,6 +1,5 @@
-import Main.{Done, Msg, PAGES_EACH_ANALYZER, Stop}
+import Main.{Done, Msg, PAGES_EACH_ANALYZER, REGEX, Stop}
 import ViewRender.Init
-import akka.actor.typed.pubsub.Topic.Publish
 import akka.actor.typed.scaladsl.{ActorContext, Behaviors, StashBuffer}
 import akka.actor.typed.{ActorRef, ActorSystem, Behavior, DispatcherSelector}
 import org.apache.pdfbox.pdmodel.PDDocument
@@ -12,15 +11,12 @@ import scala.collection.immutable.HashMap
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success}
 
-/*
-propagate STOP!
- */
-
 object Main extends App {
   trait Msg
   final case class Stop() extends Msg
   final case class Done() extends Msg
 
+  val REGEX = "[\\x{201D}\\x{201C}\\s'\", ?.@;:!-]+"
   val PAGES_EACH_ANALYZER = 4
   val system = ActorSystem(ViewRender(), name = "hello-world")
   system ! Init()
@@ -122,10 +118,8 @@ object Coordinator {
         loaderDone(context, explorerDone, totDocs, loadersDone + 1)
         analysingBehaviour(context, buffer, N, wordsToDiscard, explorerDone, totDocs, loadersDone + 1, totAnalyzers, analyzersDone + 1, wordFreqMap, totWords, viewRef)
       case StartAnalyser(doc, p, totP, stripper, docId, docLoaderRef) =>
-        val REGEX = "[\\x{201D}\\x{201C}\\s'\", ?.@;:!-]+"
-        val selfRef = context.self
         val analyzerRef = context.spawn(TextAnalyzer(HashMap[String, Int](), context.self), "text-analyzer-" + docId + "-p" + p)
-        implicit val executionContext: ExecutionContext = context.system.dispatchers.lookup(DispatcherSelector.fromConfig("my-blocking-dispatcher"))
+        implicit val executionContext: ExecutionContext = context.system.dispatchers.lookup(DispatcherSelector.fromConfig("blocking-dispatcher"))
         Future {
           stripper.setStartPage(p)
           stripper.setEndPage(Math.min(p + PAGES_EACH_ANALYZER - 1 , totP))
@@ -133,7 +127,7 @@ object Coordinator {
           (p < totP, words)
         }.onComplete {
           case Success((true, w)) =>
-            selfRef ! Coordinator.StartAnalyser(doc, p + PAGES_EACH_ANALYZER, totP, stripper, docId, docLoaderRef)
+            context.self ! StartAnalyser(doc, p + PAGES_EACH_ANALYZER, totP, stripper, docId, docLoaderRef)
             if (w.length > 0) {
               analyzerRef ! TextAnalyzer.Analyse(w, 0)
             } else {
@@ -142,7 +136,7 @@ object Coordinator {
           case Success((false, _)) =>
             docLoaderRef ! DocLoader.CloseDoc(doc)
             context.self ! LoaderDone();
-          case Failure(exception) => print(s"Exception in Stripper $docId at page $p, totPages $totP ($exception), dad ${selfRef.path}. \n")
+          case Failure(exception) => print(s"Exception in Stripper $docId at page $p, totPages $totP ($exception). \n")
         }
         analysingBehaviour(context, buffer, N, wordsToDiscard, explorerDone, totDocs, loadersDone, totAnalyzers + 1, analyzersDone, wordFreqMap, totWords, viewRef)
       case MapUpdate(map, analyzerWords) =>
@@ -162,9 +156,12 @@ object Coordinator {
           val sortedMap = wordFreqMap.toList.sortBy(_._2).reverse.slice(0, N)
           context.log.info(sortedMap.toString())
           viewRef ! Done()
+          context.self ! Stop()
         }
         analysingBehaviour(context, buffer, N, wordsToDiscard, explorerDone, totDocs, loadersDone, totAnalyzers, analyzersDone + 1, wordFreqMap, totWords, viewRef)
-      case _ => stopped(context, buffer)
+      case Stop() =>
+        context.children.asInstanceOf[Iterable[ActorRef[Msg]]].foreach(child => child ! Stop())
+        stopped(context, buffer)
     }
 
 
@@ -172,18 +169,18 @@ object Coordinator {
     Behaviors.receiveMessage {
           case Restart(n, dirpath, filepath, viewRef) =>
             setInputs(context, buffer, n, dirpath, filepath, viewRef)
+          case _ => Behaviors.same
     }
 }
 
-object IgnoreFileLoader{
+object IgnoreFileLoader {
   sealed trait FileLoaderMsg extends Msg
   final case class Load() extends FileLoaderMsg
 
   def apply(f: File, coordRef: ActorRef[Msg]) : Behavior[Msg] = Behaviors.receive {
     (context, message) => message match {
       case Load() =>
-        implicit val executionContext: ExecutionContext =
-          context.system.dispatchers.lookup(DispatcherSelector.fromConfig("my-blocking-dispatcher"))
+        implicit val executionContext: ExecutionContext = context.system.dispatchers.lookup(DispatcherSelector.fromConfig("blocking-dispatcher"))
         Future {
           val fr = new FileReader(f)
           val br = new BufferedReader(fr)
@@ -203,7 +200,7 @@ object IgnoreFileLoader{
   }
 }
 
-object FoldersExplorer{
+object FoldersExplorer {
   final case class Explore(dir: List[File], coordinator: ActorRef[Msg]) extends Msg
 
   def apply(present: Int, done: Int, ndocs: Int) : Behavior[Msg] = Behaviors.receive {
@@ -223,26 +220,19 @@ object FoldersExplorer{
         val newdir = dir.drop(1)
         if (newdir.nonEmpty){
           context.self ! FoldersExplorer.Explore(newdir, coordRef)
-        } else {
+        }
+        else {
           if (newpresent == newdone) {
             coordRef ! Coordinator.ExplorerDone(context.self, newndocs)
           }
         }
         FoldersExplorer(newpresent, newdone, newndocs)
-      case Done() => FoldersExplorer()
       case _ => Behaviors.stopped
     }
   }
-
-  def apply(): Behavior[Msg] = Behaviors.receive {
-    (_, message) =>
-      message match {
-        case _ => Behaviors.stopped
-      }
-  }
 }
 
-object DocLoader{
+object DocLoader {
   final case class Load() extends Msg
   final case class CloseDoc(doc:PDDocument) extends Msg
 
@@ -251,7 +241,7 @@ object DocLoader{
       message match {
         case Load() =>
           val selfRef = context.self
-          implicit val executionContext: ExecutionContext = context.system.dispatchers.lookup(DispatcherSelector.fromConfig("my-blocking-dispatcher"))
+          implicit val executionContext: ExecutionContext = context.system.dispatchers.lookup(DispatcherSelector.fromConfig("blocking-dispatcher"))
           Future {
             print(s"D: Loading ${f.getName}\n")
             val document = PDDocument.load(f)
@@ -267,14 +257,7 @@ object DocLoader{
         case CloseDoc(doc) =>
           context.log.info(s"${f.getName} closed")
           doc.close()
-          DocLoader()
-        case _ => Behaviors.stopped
-      }
-  }
-
-  def apply(): Behavior [Msg] = Behaviors.receive {
-    (_, message) =>
-      message match {
+          Behaviors.stopped
         case _ => Behaviors.stopped
       }
   }

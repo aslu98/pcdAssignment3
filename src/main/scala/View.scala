@@ -89,8 +89,11 @@ class ViewFrame(viewRef: ActorRef[Msg]) extends JFrame(":: Words Freq - TASKS ::
       actualState.setText("Stopped.")
       readyToStartButtons()
     })
+
     setContentPane(cp)
     setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE)
+    setSize(1000, 400)
+    setVisible(true)
   }
 
   def update(freqs: List[(String, Int)], ndocs: Int, nwords:Int): Unit = {
@@ -119,7 +122,7 @@ class ViewFrame(viewRef: ActorRef[Msg]) extends JFrame(":: Words Freq - TASKS ::
   }
 }
 
-object ViewRender{
+object ViewRender {
   sealed trait ViewMsg extends Msg
   final case class Start(n: Int, dirpath: String, filepath: String) extends ViewMsg
   final case class Update(map: List[(String, Int)], ndocs: Int, nwords:Int) extends ViewMsg
@@ -129,13 +132,8 @@ object ViewRender{
     Behaviors.receive {
       (context, message) => message match {
         case Init() =>
-          context.log.info("Init chiamato")
           val frame = new ViewFrame(context.self)
-          SwingUtilities.invokeLater(() => {
-            frame.init()
-            frame.setSize(1000, 400)
-            frame.setVisible(true)
-          })
+          frame.init()
           initialized(frame)
       }
     }
@@ -159,6 +157,7 @@ object ViewRender{
         case Update(map, ndocs, nwords) =>
           frame.update(map, ndocs, nwords)
         case Done() =>
+          frame.done()
         case Stop() =>
           coordRef ! Stop()
       }
