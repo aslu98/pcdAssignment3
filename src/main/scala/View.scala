@@ -1,5 +1,4 @@
 import Coordinator.Restart
-import Main.{Done, Msg, Stop}
 import akka.actor.typed.{ActorRef, Behavior}
 import akka.actor.typed.scaladsl.Behaviors
 

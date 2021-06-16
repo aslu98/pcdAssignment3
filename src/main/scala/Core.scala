@@ -1,4 +1,5 @@
-import Main.{Done, Msg, PAGES_EACH_ANALYZER, REGEX, Stop}
+import Coordinator.{AnalyzerDone, LoaderDone, StartAnalyzer}
+import Main.{PAGES_EACH_ANALYZER, REGEX}
 import ViewRender.Init
 import akka.actor.InvalidActorNameException
 import akka.actor.typed.scaladsl.{ActorContext, Behaviors, StashBuffer}
@@ -10,15 +11,16 @@ import java.io.{BufferedReader, File, FileReader, IOException}
 import scala.collection.immutable
 import scala.collection.immutable.HashMap
 import scala.concurrent.{ExecutionContext, Future}
-import scala.util.{Failure, Random, Success}
+import scala.util.{Failure, Success}
+
+trait Msg
+final case class Stop() extends Msg
+final case class Done() extends Msg
 
 object Main extends App {
-  trait Msg
-  final case class Stop() extends Msg
-  final case class Done() extends Msg
-
   val REGEX = "[\\x{201D}\\x{201C}\\s'\", ?.@;:!-]+"
   val PAGES_EACH_ANALYZER = 4
+
   val system = ActorSystem(ViewRender(), name = "hello-world")
   system ! Init()
 }
@@ -29,7 +31,7 @@ object Coordinator {
   final case class ExplorerDone(explorer: ActorRef[Msg], totDocs: Int) extends CoordMsg
   final case class StartLoader(f: File, id: Int) extends CoordMsg
   final case class LoaderDone() extends CoordMsg
-  final case class StartAnalyzer(doc: PDDocument, p: Int, totP: Int, stripper: PDFTextStripper, docId: Int, docLoader: ActorRef[Msg]) extends CoordMsg
+  final case class StartAnalyzer(p: Int, docId: Int, words: Array[String]) extends CoordMsg
   final case class MapUpdate(map: Map[String, Int], analyzerWords: Int) extends CoordMsg
   final case class AnalyzerDone() extends CoordMsg
   final case class Restart(n: Int, dirpath: String, filepath: String, viewRef: ActorRef[Msg]) extends CoordMsg
@@ -95,7 +97,7 @@ object Coordinator {
         Behaviors.same
       case LoaderDone() =>
         loaderDone(context, explorerDone, totDocs, loadersDone + 1)
-        beforeAnalyzing(context, buffer, N, explorerDone, totDocs, loadersDone + 1, totAnalyzers, analyzersDone + 1, viewRef)
+        beforeAnalyzing(context, buffer, N, explorerDone, totDocs, loadersDone + 1, totAnalyzers, analyzersDone, viewRef)
       case Stop() => stopped(context, buffer)
       case Done() => stopped(context, buffer)
       case other =>
@@ -117,8 +119,8 @@ object Coordinator {
         Behaviors.same
       case LoaderDone() =>
         loaderDone(context, explorerDone, totDocs, loadersDone + 1)
-        analyzingBehaviour(context, buffer, N, wordsToDiscard, explorerDone, totDocs, loadersDone + 1, totAnalyzers, analyzersDone + 1, wordFreqMap, totWords, viewRef)
-      case StartAnalyzer(doc, p, totP, stripper, docId, docLoaderRef) =>
+        analyzingBehaviour(context, buffer, N, wordsToDiscard, explorerDone, totDocs, loadersDone + 1, totAnalyzers, analyzersDone, wordFreqMap, totWords, viewRef)
+      case StartAnalyzer(p, docId, words) =>
         val name = "text-analyzer-" + docId + "-p" + p
         val analyzerRef =
           try {
@@ -128,25 +130,7 @@ object Coordinator {
               context.children.asInstanceOf[Iterable[ActorRef[Msg]]].filter(child => child.path.name == name).foreach(child => child ! Stop())
               context.spawn(TextAnalyzer(HashMap[String, Int](), context.self), name)
           }
-        implicit val executionContext: ExecutionContext = context.system.dispatchers.lookup(DispatcherSelector.fromConfig("blocking-dispatcher"))
-        Future {
-          stripper.setStartPage(p)
-          stripper.setEndPage(Math.min(p + PAGES_EACH_ANALYZER - 1 , totP))
-          val words: Array[String] = stripper.getText(doc).split(REGEX).filter(w => !wordsToDiscard.contains(w))
-          (p < totP, words)
-        }.onComplete {
-          case Success((true, w)) =>
-            context.self ! StartAnalyzer(doc, p + PAGES_EACH_ANALYZER, totP, stripper, docId, docLoaderRef)
-            if (w.length > 0) {
-              analyzerRef ! TextAnalyzer.Analyze(w, 0)
-            } else {
-              context.self ! AnalyzerDone()
-            }
-          case Success((false, _)) =>
-            docLoaderRef ! DocLoader.CloseDoc(doc)
-            context.self ! LoaderDone();
-          case Failure(exception) => print(s"Exception in Stripper $docId at page $p, totPages $totP ($exception). \n")
-        }
+        analyzerRef ! TextAnalyzer.Analyze(words.filter(w => !wordsToDiscard.contains(w)), 0)
         analyzingBehaviour(context, buffer, N, wordsToDiscard, explorerDone, totDocs, loadersDone, totAnalyzers + 1, analyzersDone, wordFreqMap, totWords, viewRef)
       case MapUpdate(map, analyzerWords) =>
         var updatedMap: Map[String, Int] = Map.empty
@@ -165,10 +149,10 @@ object Coordinator {
           val sortedMap = wordFreqMap.toList.sortBy(_._2).reverse.slice(0, N)
           context.log.info(sortedMap.toString())
           viewRef ! Done()
-          context.self ! Stop()
+          context.self ! Done()
         }
         analyzingBehaviour(context, buffer, N, wordsToDiscard, explorerDone, totDocs, loadersDone, totAnalyzers, analyzersDone + 1, wordFreqMap, totWords, viewRef)
-      case Stop() =>
+      case _ =>
         context.children.asInstanceOf[Iterable[ActorRef[Msg]]].foreach(child => child ! Stop())
         stopped(context, buffer)
     }
@@ -243,13 +227,13 @@ object FoldersExplorer {
 
 object DocLoader {
   final case class Load() extends Msg
+  final case class GetWords(doc: PDDocument, p: Int, totP: Int, stripper: PDFTextStripper, docId: Int) extends Msg
   final case class CloseDoc(doc:PDDocument) extends Msg
 
   def apply(f: File, id: Int, coordRef: ActorRef[Msg]) : Behavior[Msg] = Behaviors.receive {
     (context, message) =>
       message match {
         case Load() =>
-          val selfRef = context.self
           implicit val executionContext: ExecutionContext = context.system.dispatchers.lookup(DispatcherSelector.fromConfig("blocking-dispatcher"))
           Future {
             print(s"D: Loading ${f.getName}\n")
@@ -259,13 +243,34 @@ object DocLoader {
             print(s"D: DONE Loading ${f.getName}\n")
             document
           }.onComplete {
-            case Success(doc) => coordRef ! Coordinator.StartAnalyzer(doc, 0, doc.getNumberOfPages, new PDFTextStripper(), id, selfRef)
+            case Success(doc) => context.self ! GetWords(doc, 0, doc.getNumberOfPages, new PDFTextStripper(), id)
             case Failure(exception) => print(s"Exception in Loading ($exception) in ${context.self.path.name}")
           }
           Behaviors.same
+        case GetWords(doc, p, totP, stripper, docId) =>
+          implicit val executionContext: ExecutionContext = context.system.dispatchers.lookup(DispatcherSelector.fromConfig("blocking-dispatcher"))
+          Future {
+            stripper.setStartPage(p)
+            stripper.setEndPage(Math.min(p + PAGES_EACH_ANALYZER - 1 , totP))
+            val words: Array[String] = stripper.getText(doc).split(REGEX)
+            (p < totP, words)
+          }.onComplete {
+            case Success((true, w)) =>
+              context.self ! GetWords(doc, p + PAGES_EACH_ANALYZER, totP, stripper, docId)
+              if (w.length > 0) {
+                coordRef ! StartAnalyzer(p, docId, w)
+              } else {
+                coordRef ! AnalyzerDone()
+              }
+            case Success((false, _)) =>
+              context.self ! DocLoader.CloseDoc(doc)
+              coordRef ! LoaderDone();
+            case Failure(exception) => print(s"Exception in Stripper $docId at page $p, totPages $totP ($exception). \n")
+          }
+          Behaviors.same
         case CloseDoc(doc) =>
-          context.log.info(s"${f.getName} closed")
           doc.close()
+          context.log.info(s"${f.getName} closed")
           Behaviors.stopped
         case _ => Behaviors.stopped
       }
