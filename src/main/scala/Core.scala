@@ -90,7 +90,6 @@ object Coordinator {
         buffer.unstashAll(analyzingBehaviour(context, buffer, N, wordsToDiscard, explorerDone, totDocs, loadersDone, totAnalyzers, analyzersDone, Map.empty[String, Int], 0, viewRef))
       case ExplorerDone(explorer: ActorRef[Msg], ndocs: Int) =>
         context.log.info(s"explorer done $ndocs")
-        explorer ! Done()
         beforeAnalyzing(context, buffer, N, explorerDone = true, ndocs, loadersDone, totAnalyzers, analyzersDone, viewRef)
       case StartLoader(f: File, id: Int) =>
         startLoader(context, f, id)
@@ -112,7 +111,6 @@ object Coordinator {
     Behaviors.receiveMessage {
       case ExplorerDone(explorer: ActorRef[Msg], ndocs: Int) =>
         context.log.info(s"explorer done $ndocs")
-        explorer ! Done()
         analyzingBehaviour(context, buffer, N, wordsToDiscard, explorerDone = true, ndocs, loadersDone, totAnalyzers, analyzersDone, wordFreqMap, totWords, viewRef)
       case StartLoader(f: File, id: Int) =>
         startLoader(context, f, id)
@@ -124,13 +122,13 @@ object Coordinator {
         val name = "text-analyzer-" + docId + "-p" + p
         val analyzerRef =
           try {
-            context.spawn(TextAnalyzer(HashMap[String, Int](), context.self), name)
+            context.spawn(WordsAnalyzer(HashMap[String, Int](), context.self), name)
           } catch  {
             case _: InvalidActorNameException =>
               context.children.asInstanceOf[Iterable[ActorRef[Msg]]].filter(child => child.path.name == name).foreach(child => child ! Stop())
-              context.spawn(TextAnalyzer(HashMap[String, Int](), context.self), name)
+              context.spawn(WordsAnalyzer(HashMap[String, Int](), context.self), name + "new")
           }
-        analyzerRef ! TextAnalyzer.Analyze(words.filter(w => !wordsToDiscard.contains(w)), 0)
+        analyzerRef ! WordsAnalyzer.Analyze(words.filter(w => !wordsToDiscard.contains(w)), 0)
         analyzingBehaviour(context, buffer, N, wordsToDiscard, explorerDone, totDocs, loadersDone, totAnalyzers + 1, analyzersDone, wordFreqMap, totWords, viewRef)
       case MapUpdate(map, analyzerWords) =>
         var updatedMap: Map[String, Int] = Map.empty
@@ -217,6 +215,7 @@ object FoldersExplorer {
         else {
           if (newpresent == newdone) {
             coordRef ! Coordinator.ExplorerDone(context.self, newndocs)
+            context.self ! Done()
           }
         }
         FoldersExplorer(newpresent, newdone, newndocs)
@@ -277,7 +276,7 @@ object DocLoader {
   }
 }
 
-object TextAnalyzer {
+object WordsAnalyzer {
   final case class Analyze(words: Array[String], pos:Int) extends Msg
 
   def apply(map: Map[String, Int], coordRef: ActorRef[Msg]): Behavior[Msg] =  Behaviors.receive {
@@ -297,8 +296,8 @@ object TextAnalyzer {
           coordRef ! Coordinator.MapUpdate(updatedMap, words.length)
           coordRef ! Coordinator.AnalyzerDone()
         }
-        TextAnalyzer(updatedMap, coordRef)
-      case _ => Behaviors.stopped
+        WordsAnalyzer(updatedMap, coordRef)
+      case _ => Behaviors .stopped
     }
   }
 }
