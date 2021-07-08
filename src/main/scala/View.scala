@@ -1,10 +1,10 @@
 import Coordinator.Restart
-import akka.actor.typed.{ActorRef, Behavior}
 import akka.actor.typed.scaladsl.Behaviors
+import akka.actor.typed.{ActorRef, Behavior}
 
 import java.awt.{BorderLayout, Dimension, LayoutManager}
 import java.io.File
-import javax.swing.{Box, BoxLayout, JButton, JFileChooser, JFrame, JLabel, JPanel, JScrollPane, JTextArea, JTextField, SwingUtilities}
+import javax.swing._
 
 class ViewFrame(viewRef: ActorRef[Msg]) extends JFrame(":: Words Freq - TASKS ::") {
   private val AbsolutePath: String = new File("").getAbsolutePath + "/src/main/resources/"
@@ -90,7 +90,7 @@ class ViewFrame(viewRef: ActorRef[Msg]) extends JFrame(":: Words Freq - TASKS ::
     })
 
     setContentPane(cp)
-    setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE)
+    setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE)
     setSize(1000, 400)
     setVisible(true)
   }
