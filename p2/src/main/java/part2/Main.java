@@ -1,19 +1,42 @@
 package part2;
-
-import java.io.File;
-
-import com.typesafe.config.Config;
-import com.typesafe.config.ConfigFactory;
+import akka.actor.ActorRef;
+import akka.actor.ActorSelection;
 import akka.actor.ActorSystem;
 import akka.actor.Props;
+import com.typesafe.config.Config;
+import com.typesafe.config.ConfigFactory;
+import part2.messages.accept.NewPlayerMsg;
 
-public class Main{
+import javax.management.openmbean.OpenDataException;
+import java.io.File;
+import java.io.IOException;
+import java.net.InetSocketAddress;
+import java.net.ServerSocket;
+import java.util.Optional;
 
-  public static void main(String[] args) {
-	/*Config config = ConfigFactory.parseFile(new File("src/main/java/part2/player.conf"));
-	ActorSystem system = ActorSystem.create("MySystem",config);
-	system.actorOf(Props.create(Pinger.class),"pinger");*/
-	  Player p = new Player();
-	  p.hello()
+public class Main {
+	public static void main(String[] args) throws Exception {
+		Peer peer;
+		final Optional<Integer> optPort = findFreePort();
+			if (optPort.isPresent()){
+				peer = new Peer(optPort.get());
+			} else {
+				throw new Exception("No ports available");
+			}
+		if (args.length != 0){
+			peer.notifyPlayer("127.0.0.1", args[0]);
+		}
+	  }
+
+  private static Optional<Integer> findFreePort(){
+	  final InetSocketAddress randomSocketAddress = new InetSocketAddress(0);
+	  Optional<Integer> port = Optional.empty();
+	  try (ServerSocket ss = new ServerSocket()) {
+		  ss.bind(randomSocketAddress);
+		  port = Optional.of(ss.getLocalPort());
+	  } catch (IOException e) {
+		  e.printStackTrace();
+	  }
+	  return port;
   }
 }

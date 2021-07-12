@@ -26,6 +26,7 @@ public class SelectionManager {
 	}
 
 	@FunctionalInterface
+	public
 	interface Listener{
 		void onSwapPerformed();
 	}

@@ -2,7 +2,7 @@ package part2.puzzle;
 
 import java.awt.Image;
 
-class Tile implements Comparable<Tile>{
+public class Tile implements Comparable<Tile>{
 	private Image image;
 	private int originalPosition;
 	private int currentPosition;
@@ -16,22 +16,26 @@ class Tile implements Comparable<Tile>{
     public Image getImage() {
     	return image;
     }
-    
+
     public boolean isInRightPlace() {
     	return currentPosition == originalPosition;
     }
-    
+
     public int getCurrentPosition() {
     	return currentPosition;
     }
-    
+
+    public int getOriginalPosition() {
+        return originalPosition;
+    }
+
     public void setCurrentPosition(final int newPosition) {
     	currentPosition = newPosition;
     }
 
-	@Override
+    @Override
 	public int compareTo(Tile other) {
-		return this.currentPosition < other.currentPosition ? -1 
+		return this.currentPosition < other.currentPosition ? -1
 				: (this.currentPosition == other.currentPosition ? 0 : 1);
 	}
 }

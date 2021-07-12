@@ -1,5 +1,8 @@
 package part2.puzzle;
 
+import akka.actor.ActorRef;
+import part2.messages.update.UpdateTilesMsg;
+
 import javax.imageio.ImageIO;
 import javax.swing.BorderFactory;
 import javax.swing.JFrame;
@@ -18,31 +21,35 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 @SuppressWarnings("serial")
 public class PuzzleBoard extends JFrame {
 	
-	final int rows, columns;
-	private List<Tile> tiles = new ArrayList<>();
+	private final int rows, columns;
+    private final JPanel board;
+    private final ActorRef player;
+    private List<Tile> tiles = new ArrayList<>();
 	
 	private SelectionManager selectionManager = new SelectionManager();
 	
-    public PuzzleBoard(final int rows, final int columns, final String imagePath) {
+    public PuzzleBoard(final int rows, final int columns, final String imagePath, ActorRef player) {
     	this.rows = rows;
 		this.columns = columns;
+		this.player = player;
     	
     	setTitle("Puzzle");
         setResizable(false);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         
-        final JPanel board = new JPanel();
+        board = new JPanel();
         board.setBorder(BorderFactory.createLineBorder(Color.gray));
         board.setLayout(new GridLayout(rows, columns, 0, 0));
         getContentPane().add(board, BorderLayout.CENTER);
         
         createTiles(imagePath);
-        paintPuzzle(board);
+        paintPuzzle();
     }
 
     
@@ -79,7 +86,7 @@ public class PuzzleBoard extends JFrame {
         }
 	}
     
-    private void paintPuzzle(final JPanel board) {
+    private void paintPuzzle() {
     	board.removeAll();
     	
     	Collections.sort(tiles);
@@ -90,8 +97,9 @@ public class PuzzleBoard extends JFrame {
             btn.setBorder(BorderFactory.createLineBorder(Color.gray));
             btn.addActionListener(actionListener -> {
             	selectionManager.selectTile(tile, () -> {
-            		paintPuzzle(board);
+            		paintPuzzle();
                 	checkSolution();
+                    player.tell(new UpdateTilesMsg(this.getCurrentPositions()), ActorRef.noSender());
             	});
             });
     	});
@@ -104,5 +112,20 @@ public class PuzzleBoard extends JFrame {
     	if(tiles.stream().allMatch(Tile::isInRightPlace)) {
     		JOptionPane.showMessageDialog(this, "Puzzle Completed!", "", JOptionPane.INFORMATION_MESSAGE);
     	}
+    }
+
+    public List<Integer> getCurrentPositions() {
+        return this.tiles.stream()
+                .sorted((t1, t2) -> t1.getOriginalPosition() < t2.getOriginalPosition() ? -1 : (t1.getOriginalPosition() == t2.getOriginalPosition() ? 0 : 1))
+                .map(tile -> tile.getCurrentPosition())
+                .collect(Collectors.toList());
+    }
+
+    public void setCurrentPositions(final List<Integer> positions){
+        for (int i=0; i<positions.size(); i++){
+            int finalI = i;
+            this.tiles.stream().filter(tile -> tile.getOriginalPosition() == finalI).findAny().get().setCurrentPosition(positions.get(i));
+        }
+        this.paintPuzzle();
     }
 }
