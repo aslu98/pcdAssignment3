@@ -1,6 +1,7 @@
 package part2.puzzle;
 
 import akka.actor.ActorRef;
+import part2.messages.update.UpdateNextMsg;
 import part2.messages.update.UpdateTilesMsg;
 
 import javax.imageio.ImageIO;
@@ -99,7 +100,7 @@ public class PuzzleBoard extends JFrame {
             	selectionManager.selectTile(tile, () -> {
             		paintPuzzle();
                 	checkSolution();
-                    player.tell(new UpdateTilesMsg(this.getCurrentPositions()), ActorRef.noSender());
+                    player.tell(new UpdateNextMsg(), ActorRef.noSender());
             	});
             });
     	});
@@ -122,10 +123,12 @@ public class PuzzleBoard extends JFrame {
     }
 
     public void setCurrentPositions(final List<Integer> positions){
+        System.out.println("new positions in puzzleboard " + positions);
         for (int i=0; i<positions.size(); i++){
             int finalI = i;
             this.tiles.stream().filter(tile -> tile.getOriginalPosition() == finalI).findAny().get().setCurrentPosition(positions.get(i));
         }
-        this.paintPuzzle();
+        paintPuzzle();
+        checkSolution();
     }
 }

@@ -49,8 +49,8 @@ lab10/rmi/Message.java
  lab10.rmi.Message
 lab10/rmi/MyClass1Impl.java
  lab10.rmi.MyClass1Impl
-part2/messages/update/AckMsg.java
- part2.messages.update.AckMsg
+part2/puzzle/Tile.java
+ part2.puzzle.Tile
 lab09/actors/integrations/ViewActor.java
  lab09.actors.integrations.ViewActor
 lab09/actors_remote/hello/HelloMsg.java
@@ -87,11 +87,11 @@ part2/messages/accept/PlayerAcceptedMsg.java
 part2/puzzle/SelectionManager.java
  part2.puzzle.SelectionManager
  part2.puzzle.SelectionManager$Listener
-part2/puzzle/Tile.java
- part2.puzzle.Tile
-part2/puzzle/PuzzleBoard.java
- part2.puzzle.PuzzleBoard
+part2/messages/update/UpdateNextMsg.java
+ part2.messages.update.UpdateNextMsg
 part2/Player.java
  part2.Player
 part2/Peer.java
  part2.Peer
+part2/puzzle/PuzzleBoard.java
+ part2.puzzle.PuzzleBoard

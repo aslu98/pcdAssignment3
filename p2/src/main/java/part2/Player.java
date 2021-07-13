@@ -5,11 +5,10 @@ import part2.messages.accept.NewPlayerMsg;
 import part2.messages.accept.NotifyNewPlayerToMsg;
 import part2.messages.accept.PlayerAcceptedMsg;
 
-import part2.messages.update.AckMsg;
+import part2.messages.update.UpdateNextMsg;
 import part2.messages.update.UpdatePlayersMsg;
 import part2.messages.update.UpdateTilesMsg;
 import part2.puzzle.PuzzleBoard;
-import part2.puzzle.SelectionManager;
 
 import java.io.Serializable;
 import java.util.ArrayList;
@@ -43,16 +42,16 @@ public class Player extends AbstractActor{
 					board.setCurrentPositions(msg.getCurrentPositions());
 				})
 				.match(UpdateTilesMsg.class, msg -> {
-					System.out.println("update msg");
+					System.out.println("update msg from " + getSender());
 					if (!board.getCurrentPositions().equals(msg.getCurrentPositions())){
-						System.out.println("update different positions");
+						System.out.println("update: different positions");
 						board.setCurrentPositions(msg.getCurrentPositions());
 						this.tellNextPlayer(new UpdateTilesMsg(msg.getCurrentPositions()));
-						System.out.println(this.board.getCurrentPositions());
-					} else if (getSender() == ActorRef.noSender()){
-						System.out.println("no sender"); //in questo caso è stato mandato dalla PuzzleBoard!
-						this.tellNextPlayer(new UpdateTilesMsg(msg.getCurrentPositions()));
 					}
+				})
+				.match(UpdateNextMsg.class, msg -> {
+					System.out.println("update next from " + getSender());
+					this.tellNextPlayer(new UpdateTilesMsg(this.board.getCurrentPositions()));
 				})
 				.match(UpdatePlayersMsg.class, msg -> {
 					if (!players.equals(msg.getPlayers())){
@@ -60,8 +59,7 @@ public class Player extends AbstractActor{
 						this.myIndex = players.indexOf(getSelf());
 						this.tellNextPlayer(new UpdatePlayersMsg(msg.getPlayers()));
 					}
-				})
-				.match(AckMsg.class, msg -> System.out.println("ACK")).build();
+				}).build();
 	}
 
 	protected void initializeBoard(){
