@@ -63,7 +63,7 @@ public class Player extends AbstractActor{
 					}
 				})
 				.match(PlayerExitMsg.class, msg -> {
-					System.out.println(getSender() + " failed (my prev player)");
+					System.out.println(getSender() + "failed");
 					this.players.remove(getSender());
 					this.tellNextPlayer(new UpdatePlayersMsg(this.players));
 				})
@@ -105,7 +105,10 @@ public class Player extends AbstractActor{
 
 	@Override
 	public void postStop() throws Exception {
+		System.out.println("post stop");
+		//nel caso il nextplayer fosse morto il mex che questo è morto non arriverebbe agli altri, quindi meglio mandarlo a tutti
 		this.tellNextPlayer(new PlayerExitMsg());
+
 		super.postStop();
 	}
 }
