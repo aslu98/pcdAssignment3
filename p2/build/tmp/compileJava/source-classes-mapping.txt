@@ -84,14 +84,17 @@ lab09/actors/integrations/Main.java
  lab09.actors.integrations.Main
 part2/messages/accept/PlayerAcceptedMsg.java
  part2.messages.accept.PlayerAcceptedMsg
+part2/messages/update/UpdateNextMsg.java
+ part2.messages.update.UpdateNextMsg
 part2/puzzle/SelectionManager.java
  part2.puzzle.SelectionManager
  part2.puzzle.SelectionManager$Listener
-part2/messages/update/UpdateNextMsg.java
- part2.messages.update.UpdateNextMsg
+part2/messages/fail/FailedMsg.java
+ part2.messages.fail.FailedMsg
 part2/Player.java
  part2.Player
 part2/Peer.java
  part2.Peer
 part2/puzzle/PuzzleBoard.java
  part2.puzzle.PuzzleBoard
+ part2.puzzle.PuzzleBoard$1

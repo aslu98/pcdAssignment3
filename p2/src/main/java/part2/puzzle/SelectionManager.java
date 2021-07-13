@@ -1,21 +1,19 @@
 package part2.puzzle;
 
+import java.util.Optional;
+
 public class SelectionManager {
 
-	private boolean selectionActive = false;
-	private Tile selectedTile;
+	private Optional<Tile> selectedTile = Optional.empty();
 
 	public void selectTile(final Tile tile, final Listener listener) {
 		
-		if(selectionActive) {
-			selectionActive = false;
-			
-			swap(selectedTile, tile);
-			
+		if(selectedTile.isPresent()) {
+			swap(selectedTile.get(), tile);
+			selectedTile = Optional.empty();
 			listener.onSwapPerformed();
 		} else {
-			selectionActive = true;
-			selectedTile = tile;
+			selectedTile = Optional.of(tile);
 		}
 	}
 
@@ -25,8 +23,11 @@ public class SelectionManager {
 		t2.setCurrentPosition(pos);
 	}
 
+	public Optional<Tile> getSelectedTile() {
+		return selectedTile;
+	}
+
 	@FunctionalInterface
-	public
 	interface Listener{
 		void onSwapPerformed();
 	}

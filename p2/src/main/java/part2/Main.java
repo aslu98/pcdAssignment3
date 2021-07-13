@@ -1,14 +1,4 @@
 package part2;
-import akka.actor.ActorRef;
-import akka.actor.ActorSelection;
-import akka.actor.ActorSystem;
-import akka.actor.Props;
-import com.typesafe.config.Config;
-import com.typesafe.config.ConfigFactory;
-import part2.messages.accept.NewPlayerMsg;
-
-import javax.management.openmbean.OpenDataException;
-import java.io.File;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.ServerSocket;

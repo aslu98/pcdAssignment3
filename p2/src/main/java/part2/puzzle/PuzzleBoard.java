@@ -1,6 +1,8 @@
 package part2.puzzle;
 
 import akka.actor.ActorRef;
+import akka.actor.Kill;
+import akka.actor.PoisonPill;
 import part2.messages.update.UpdateNextMsg;
 import part2.messages.update.UpdateTilesMsg;
 
@@ -14,6 +16,8 @@ import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.GridLayout;
 import java.awt.Image;
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
 import java.awt.image.BufferedImage;
 import java.awt.image.CropImageFilter;
 import java.awt.image.FilteredImageSource;
@@ -22,6 +26,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
@@ -42,7 +47,6 @@ public class PuzzleBoard extends JFrame {
     	
     	setTitle("Puzzle");
         setResizable(false);
-        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         
         board = new JPanel();
         board.setBorder(BorderFactory.createLineBorder(Color.gray));
@@ -51,6 +55,16 @@ public class PuzzleBoard extends JFrame {
         
         createTiles(imagePath);
         paintPuzzle();
+
+        addWindowListener(new WindowAdapter() {
+            @Override
+            public void windowClosing(WindowEvent windowEvent) {
+                player.tell(PoisonPill.getInstance(), ActorRef.noSender());
+                //i mex successivi sono deadletters, quelle già nella mailbox sono processati
+                //player.tell(Kill.getInstance(), ActorRef.noSender());
+                System.exit(0);
+            }
+        });
     }
 
     
@@ -88,6 +102,7 @@ public class PuzzleBoard extends JFrame {
 	}
     
     private void paintPuzzle() {
+        Optional<Tile> selectedTile = selectionManager.getSelectedTile();
     	board.removeAll();
     	
     	Collections.sort(tiles);
@@ -95,7 +110,7 @@ public class PuzzleBoard extends JFrame {
     	tiles.forEach(tile -> {
     		final TileButton btn = new TileButton(tile);
             board.add(btn);
-            btn.setBorder(BorderFactory.createLineBorder(Color.gray));
+            btn.setBorder(BorderFactory.createLineBorder(selectedTile.isPresent() && tile == selectedTile.get() ? Color.red : Color.gray));
             btn.addActionListener(actionListener -> {
             	selectionManager.selectTile(tile, () -> {
             		paintPuzzle();
@@ -123,7 +138,6 @@ public class PuzzleBoard extends JFrame {
     }
 
     public void setCurrentPositions(final List<Integer> positions){
-        System.out.println("new positions in puzzleboard " + positions);
         for (int i=0; i<positions.size(); i++){
             int finalI = i;
             this.tiles.stream().filter(tile -> tile.getOriginalPosition() == finalI).findAny().get().setCurrentPosition(positions.get(i));
