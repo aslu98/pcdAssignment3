@@ -1,100 +1,106 @@
-lab10/rmi/Test02_Server2.java
- lab10.rmi.Test02_Server2
-lab09/actors/hello_typed/BaseMsg.java
- lab09.actors.hello_typed.BaseMsg
-part2/messages/update/UpdatePlayersMsg.java
- part2.messages.update.UpdatePlayersMsg
-lab10/rmi/MyClass1.java
- lab10.rmi.MyClass1
-lab10/rmi/HelloService.java
- lab10.rmi.HelloService
-lab09/actors_remote/pingpong/Ponger.java
- lab09.actors_remote.pingpong.Ponger
-part2/messages/update/UpdateTilesMsg.java
- part2.messages.update.UpdateTilesMsg
+part2/puzzle/PuzzleBoard.java
+ part2.puzzle.PuzzleBoard
+ part2.puzzle.PuzzleBoard$1
 lab10/rmi/Test01_Client1a.java
  lab10.rmi.Test01_Client1a
-lab09/actors/integrations/PressedMsg.java
- lab09.actors.integrations.PressedMsg
-lab10/rmi/MyClass2.java
- lab10.rmi.MyClass2
 lab09/actors_remote/pingpong/PingMsg.java
  lab09.actors_remote.pingpong.PingMsg
 part2/messages/accept/NewPlayerMsg.java
  part2.messages.accept.NewPlayerMsg
+part2/messages/update/UpdateNextMsg.java
+ part2.messages.update.UpdateNextMsg
 lab10/rmi/Test02_Client2.java
  lab10.rmi.Test02_Client2
-lab09/actors_remote/hello/HappyActor.java
- lab09.actors_remote.hello.HappyActor
 lab10/rmi/MyClass2Impl.java
  lab10.rmi.MyClass2Impl
 lab09/actors/hello_typed/Main.java
  lab09.actors.hello_typed.Main
-lab09/actors_remote/pingpong/Pinger.java
- lab09.actors_remote.pingpong.Pinger
 lab10/rmi/Test01_Client1b.java
  lab10.rmi.Test01_Client1b
 lab09/actors_remote/hello/Client.java
  lab09.actors_remote.hello.Client
-lab09/actors/integrations/ViewFrame.java
- lab09.actors.integrations.ViewFrame
- lab09.actors.integrations.ViewFrame$1
 lab10/rmi/Test01_Server.java
  lab10.rmi.Test01_Server
-part2/messages/MessageType.java
- part2.messages.MessageType
-lab09/actors/hello_typed/HappyActorBehaviour.java
- lab09.actors.hello_typed.HappyActorBehaviour
 lab10/rmi/Message.java
  lab10.rmi.Message
 lab10/rmi/MyClass1Impl.java
  lab10.rmi.MyClass1Impl
-part2/puzzle/Tile.java
- part2.puzzle.Tile
-lab09/actors/integrations/ViewActor.java
- lab09.actors.integrations.ViewActor
+part2/messages/accept/NotifyNewPlayerMsg.java
+ part2.messages.accept.NotifyNewPlayerMsg
+part2/messages/terminate/PlayerExitMsg.java
+ part2.messages.terminate.PlayerExitMsg
 lab09/actors_remote/hello/HelloMsg.java
  lab09.actors_remote.hello.HelloMsg
-part2/Main.java
- part2.Main
-lab09/actors/hello_typed/HelloMsg.java
- lab09.actors.hello_typed.HelloMsg
-lab10/rmi/Counter.java
- lab10.rmi.Counter
-lab10/rmi/HelloServiceImpl.java
- lab10.rmi.HelloServiceImpl
-lab09/actors_remote/pingpong/PongMsg.java
- lab09.actors_remote.pingpong.PongMsg
+part2/messages/update/UpdateTilesMsg.java
+ part2.messages.update.UpdateTilesMsg
 lab09/actors_remote/pingpong/MainPonger.java
  lab09.actors_remote.pingpong.MainPonger
 lab10/rmi/CounterImpl.java
  lab10.rmi.CounterImpl
-part2/puzzle/TileButton.java
- part2.puzzle.TileButton
- part2.puzzle.TileButton$1
 lab09/actors_remote/pingpong/MainPinger.java
  lab09.actors_remote.pingpong.MainPinger
 lab10/rmi/MessageExt.java
  lab10.rmi.MessageExt
-part2/messages/accept/NotifyNewPlayerToMsg.java
- part2.messages.accept.NotifyNewPlayerToMsg
+part2/puzzle/TileButton.java
+ part2.puzzle.TileButton
+ part2.puzzle.TileButton$1
 lab09/actors_remote/hello/Main.java
  lab09.actors_remote.hello.Main
-lab09/actors/integrations/Main.java
- lab09.actors.integrations.Main
+lab09/actors_remote/pingpong/PongMsg.java
+ lab09.actors_remote.pingpong.PongMsg
+lab10/rmi/Counter.java
+ lab10.rmi.Counter
+part2/messages/ack/SendReplayMsg.java
+ part2.messages.ack.SendReplayMsg
+lab09/actors/hello_typed/BaseMsg.java
+ lab09.actors.hello_typed.BaseMsg
+lab10/rmi/Test02_Server2.java
+ lab10.rmi.Test02_Server2
+part2/Main.java
+ part2.Main
+lab10/rmi/MyClass1.java
+ lab10.rmi.MyClass1
+lab10/rmi/HelloService.java
+ lab10.rmi.HelloService
+lab09/actors/hello_typed/HelloMsg.java
+ lab09.actors.hello_typed.HelloMsg
+lab09/actors_remote/pingpong/Ponger.java
+ lab09.actors_remote.pingpong.Ponger
+lab09/actors/integrations/PressedMsg.java
+ lab09.actors.integrations.PressedMsg
+lab10/rmi/MyClass2.java
+ lab10.rmi.MyClass2
+lab09/actors_remote/hello/HappyActor.java
+ lab09.actors_remote.hello.HappyActor
+lab09/actors_remote/pingpong/Pinger.java
+ lab09.actors_remote.pingpong.Pinger
+lab09/actors/integrations/ViewFrame.java
+ lab09.actors.integrations.ViewFrame
+ lab09.actors.integrations.ViewFrame$1
+part2/messages/UniqueIdMsg.java
+ part2.messages.UniqueIdMsg
+part2/messages/terminate/PlayerFailMsg.java
+ part2.messages.terminate.PlayerFailMsg
+lab09/actors/integrations/ViewActor.java
+ lab09.actors.integrations.ViewActor
 part2/messages/accept/PlayerAcceptedMsg.java
  part2.messages.accept.PlayerAcceptedMsg
-part2/messages/update/UpdateNextMsg.java
- part2.messages.update.UpdateNextMsg
+lab09/actors/hello_typed/HappyActorBehaviour.java
+ lab09.actors.hello_typed.HappyActorBehaviour
+lab10/rmi/HelloServiceImpl.java
+ lab10.rmi.HelloServiceImpl
 part2/puzzle/SelectionManager.java
  part2.puzzle.SelectionManager
  part2.puzzle.SelectionManager$Listener
-part2/messages/fail/FailedMsg.java
- part2.messages.fail.FailedMsg
+part2/puzzle/Tile.java
+ part2.puzzle.Tile
+lab09/actors/integrations/Main.java
+ lab09.actors.integrations.Main
+part2/messages/ack/AckMsg.java
+ part2.messages.ack.AckMsg
+part2/messages/update/UpdatePlayersMsg.java
+ part2.messages.update.UpdatePlayersMsg
 part2/Player.java
  part2.Player
 part2/Peer.java
  part2.Peer
-part2/puzzle/PuzzleBoard.java
- part2.puzzle.PuzzleBoard
- part2.puzzle.PuzzleBoard$1
