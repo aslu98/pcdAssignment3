@@ -68,6 +68,7 @@ public class Player extends AbstractActorWithTimers{
 				})
 				.match(UpdateNextMsg.class, msg -> this.tellNextPlayer(new UpdateTilesMsg(this.board.getCurrentPositions())))
 				.match(UpdateTilesMsg.class, msg -> {
+					this.checkNewPlayer(getSender());
 					if (!board.getCurrentPositions().equals(msg.getCurrentPositions())){
 						System.out.println("update tiles from " + getSender() + " - new tiles: " + msg.getCurrentPositions());
 						board.setCurrentPositions(msg.getCurrentPositions());
@@ -146,10 +147,15 @@ public class Player extends AbstractActorWithTimers{
 		return players.get((myIndex + 1) % players.size());
 	}
 
+	private void checkNewPlayer(final ActorRef newPlayer){
+		if (!this.players.contains(newPlayer)){
+			this.addToPlayers(newPlayer);
+		}
+	}
+
 	@Override
 	public void postStop() throws Exception {
 		System.out.println("STOPPED.");
-		//nel caso il nextplayer fosse morto il mex che questo è morto non arriverebbe agli altri, quindi meglio mandarlo a tutti
 		for (ActorRef p: players){
 			p.tell(new PlayerExitMsg(), getSelf());
 		}

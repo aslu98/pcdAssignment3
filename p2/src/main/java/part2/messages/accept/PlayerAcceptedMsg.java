@@ -1,9 +1,9 @@
 package part2.messages.accept;
 
-import java.io.Serializable;
+import part2.messages.UniqueIdMsg;
 import java.util.List;
 
-public final class PlayerAcceptedMsg implements Serializable {
+public final class PlayerAcceptedMsg extends UniqueIdMsg {
     private static final long serialVersionUID = 7L;
     private final List<Integer> currentPositions;
 

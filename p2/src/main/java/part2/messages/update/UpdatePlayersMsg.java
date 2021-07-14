@@ -15,6 +15,7 @@ public final class UpdatePlayersMsg extends UniqueIdMsg {
 	public UpdatePlayersMsg(final List<ActorRef> players){
 		this.players = players;
 	}
+	
 	public List<ActorRef> getPlayers(){
 		return players;
 	}

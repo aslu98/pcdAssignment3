@@ -83,8 +83,8 @@ part2/messages/terminate/PlayerFailMsg.java
  part2.messages.terminate.PlayerFailMsg
 lab09/actors/integrations/ViewActor.java
  lab09.actors.integrations.ViewActor
-part2/messages/accept/PlayerAcceptedMsg.java
- part2.messages.accept.PlayerAcceptedMsg
+part2/messages/ack/AckMsg.java
+ part2.messages.ack.AckMsg
 lab09/actors/hello_typed/HappyActorBehaviour.java
  lab09.actors.hello_typed.HappyActorBehaviour
 lab10/rmi/HelloServiceImpl.java
@@ -96,10 +96,10 @@ part2/puzzle/Tile.java
  part2.puzzle.Tile
 lab09/actors/integrations/Main.java
  lab09.actors.integrations.Main
-part2/messages/ack/AckMsg.java
- part2.messages.ack.AckMsg
 part2/messages/update/UpdatePlayersMsg.java
  part2.messages.update.UpdatePlayersMsg
+part2/messages/accept/PlayerAcceptedMsg.java
+ part2.messages.accept.PlayerAcceptedMsg
 part2/Player.java
  part2.Player
 part2/Peer.java
