@@ -48,8 +48,7 @@ public class Player extends AbstractActorWithTimers{
 				.match(NewPlayerMsg.class, msg -> {
 					System.out.println("received new player: " + getSender());
 					this.addToPlayers(getSender());
-					//AFTER ACK FROM NEXT
-					//getSender().tell(new PlayerAcceptedMsg(this.board.getCurrentPositions()), getSelf());
+					getSender().tell(new PlayerAcceptedMsg(this.board.getCurrentPositions()), getSelf());
 				})
 				.match(PlayerAcceptedMsg.class, msg -> {
 					System.out.println("PLAYER ACCEPTED by the distributed system");
@@ -60,12 +59,9 @@ public class Player extends AbstractActorWithTimers{
 						System.out.println("update players from " + getSender() + " - new players: " + msg.getPlayers());
 						this.players = msg.getPlayers();
 						this.myIndex = players.indexOf(getSelf());
-						this.tellNextPlayer(new UpdatePlayersMsg(msg.getPlayers(), msg.getNewPlayer()));
+						this.tellNextPlayer(new UpdatePlayersMsg(msg.getPlayers()));
 					} else {
 						System.out.println("update players from " + getSender() + " - Update stopped.");
-						if (msg.getNewPlayer().isPresent()){
-							msg.getNewPlayer().get().tell(new PlayerAcceptedMsg(this.board.getCurrentPositions()), getSelf());
-						}
 					}
 					getSender().tell(new AckMsg(msg), getSelf());
 					System.out.println("Sent ACK to " + getSender() +" for msg " + msg.getUniqueID());
@@ -119,7 +115,7 @@ public class Player extends AbstractActorWithTimers{
 		} else {
 			this.players.add(playerIndex, player);
 		}
-		this.tellNextPlayer(new UpdatePlayersMsg(this.players, Optional.of(player)));
+		this.tellNextPlayer(new UpdatePlayersMsg(this.players));
 	}
 
 	private void removeFromPlayers(final ActorRef player){
