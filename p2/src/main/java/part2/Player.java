@@ -155,7 +155,7 @@ public class Player extends AbstractActorWithTimers{
 
 	@Override
 	public void postStop() throws Exception {
-		System.out.println("STOPPED.");
+		System.out.println("CLOSED.");
 		for (ActorRef p: players){
 			p.tell(new PlayerExitMsg(), getSelf());
 		}

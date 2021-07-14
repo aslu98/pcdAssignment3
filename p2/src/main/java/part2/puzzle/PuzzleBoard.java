@@ -1,10 +1,8 @@
 package part2.puzzle;
 
 import akka.actor.ActorRef;
-import akka.actor.Kill;
 import akka.actor.PoisonPill;
 import part2.messages.update.UpdateNextMsg;
-import part2.messages.update.UpdateTilesMsg;
 
 import javax.imageio.ImageIO;
 import javax.swing.BorderFactory;
@@ -60,8 +58,6 @@ public class PuzzleBoard extends JFrame {
             @Override
             public void windowClosing(WindowEvent windowEvent) {
                 player.tell(PoisonPill.getInstance(), ActorRef.noSender());
-                //i mex successivi sono deadletters, quelle già nella mailbox sono processati
-                //player.tell(Kill.getInstance(), ActorRef.noSender());
                 System.exit(0);
             }
         });
@@ -127,6 +123,8 @@ public class PuzzleBoard extends JFrame {
     private void checkSolution() {
     	if(tiles.stream().allMatch(Tile::isInRightPlace)) {
     		JOptionPane.showMessageDialog(this, "Puzzle Completed!", "", JOptionPane.INFORMATION_MESSAGE);
+            player.tell(PoisonPill.getInstance(), ActorRef.noSender());
+    		System.exit(0);
     	}
     }
 

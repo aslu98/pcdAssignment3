@@ -1,6 +1,5 @@
-part2/puzzle/PuzzleBoard.java
- part2.puzzle.PuzzleBoard
- part2.puzzle.PuzzleBoard$1
+part2/Peer.java
+ part2.Peer
 lab10/rmi/Test01_Client1a.java
  lab10.rmi.Test01_Client1a
 lab09/actors_remote/pingpong/PingMsg.java
@@ -102,5 +101,6 @@ part2/messages/accept/PlayerAcceptedMsg.java
  part2.messages.accept.PlayerAcceptedMsg
 part2/Player.java
  part2.Player
-part2/Peer.java
- part2.Peer
+part2/puzzle/PuzzleBoard.java
+ part2.puzzle.PuzzleBoard
+ part2.puzzle.PuzzleBoard$1
