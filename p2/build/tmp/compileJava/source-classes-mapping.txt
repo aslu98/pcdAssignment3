@@ -12,8 +12,8 @@ part2/rmi/puzzle/Tile.java
  part2.rmi.puzzle.Tile
 part2/akka/messages/UniqueIdMsg.java
  part2.akka.messages.UniqueIdMsg
-part2/rmi/Main.java
- part2.rmi.Main
+part2/akka/messages/update/UpdateTilesMsg.java
+ part2.akka.messages.update.UpdateTilesMsg
 part2/rmi/puzzle/SelectionManager.java
  part2.rmi.puzzle.SelectionManager
  part2.rmi.puzzle.SelectionManager$Listener
@@ -30,9 +30,8 @@ part2/akka/Player.java
  part2.akka.Player
 part2/akka/messages/ack/SendReplayMsg.java
  part2.akka.messages.ack.SendReplayMsg
-part2/rmi/puzzle/PuzzleBoard.java
- part2.rmi.puzzle.PuzzleBoard
- part2.rmi.puzzle.PuzzleBoard$1
+part2/akka/messages/accept/PlayerAcceptedMsg.java
+ part2.akka.messages.accept.PlayerAcceptedMsg
 part2/akka/messages/ack/AckMsg.java
  part2.akka.messages.ack.AckMsg
 lab10/rmi/Test02_Client2.java
@@ -63,13 +62,13 @@ part2/akka/puzzle/TileButton.java
  part2.akka.puzzle.TileButton$1
 lab10/rmi/HelloServiceImpl.java
  lab10.rmi.HelloServiceImpl
-part2/rmi/Player.java
- part2.rmi.Player
+part2/akka/messages/update/UpdateNextMsg.java
+ part2.akka.messages.update.UpdateNextMsg
 part2/akka/puzzle/SelectionManager.java
  part2.akka.puzzle.SelectionManager
  part2.akka.puzzle.SelectionManager$Listener
-part2/rmi/PuzzleBoardServiceImpl.java
- part2.rmi.PlayerStateServiceImpl
+part2/akka/Main.java
+ part2.akka.Main
 lab10/rmi/CounterImpl.java
  lab10.rmi.CounterImpl
 lab10/rmi/MessageExt.java
@@ -78,11 +77,12 @@ lab10/rmi/Counter.java
  lab10.rmi.Counter
 part2/akka/Peer.java
  part2.akka.Peer
-part2/akka/messages/update/UpdateTilesMsg.java
- part2.akka.messages.update.UpdateTilesMsg
-part2/akka/messages/update/UpdateNextMsg.java
- part2.akka.messages.update.UpdateNextMsg
-part2/akka/messages/accept/PlayerAcceptedMsg.java
- part2.akka.messages.accept.PlayerAcceptedMsg
-part2/akka/Main.java
- part2.akka.Main
+part2/rmi/PuzzleBoardServiceImpl.java
+ part2.rmi.PlayerStateServiceImpl
+part2/rmi/puzzle/PuzzleBoard.java
+ part2.rmi.puzzle.PuzzleBoard
+ part2.rmi.puzzle.PuzzleBoard$1
+part2/rmi/Player.java
+ part2.rmi.Player
+part2/rmi/Main.java
+ part2.rmi.Main

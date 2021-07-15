@@ -8,9 +8,11 @@ import java.util.List;
 class PlayerStateServiceImpl implements PlayerStateService{
 
     private List<Integer> positions;
+    private final Player myPlayer;
 
-    PlayerStateServiceImpl(final List<Integer> positions){
+    PlayerStateServiceImpl(final List<Integer> positions, final Player myPlayer){
         this.positions = positions;
+        this.myPlayer = myPlayer;
     }
 
     @Override
@@ -21,5 +23,6 @@ class PlayerStateServiceImpl implements PlayerStateService{
     @Override
     public void updatePositions(List<Integer> positions) throws RemoteException {
          this.positions = positions;
+         this.myPlayer.updateFromPlayerState(positions);
     }
 }

@@ -3,6 +3,7 @@ package part2.rmi.puzzle;
 import akka.actor.ActorRef;
 import akka.actor.PoisonPill;
 import part2.akka.messages.update.UpdateNextMsg;
+import part2.rmi.Player;
 
 import javax.imageio.ImageIO;
 import javax.swing.*;
@@ -14,6 +15,7 @@ import java.awt.image.CropImageFilter;
 import java.awt.image.FilteredImageSource;
 import java.io.File;
 import java.io.IOException;
+import java.rmi.RemoteException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -27,12 +29,14 @@ public class PuzzleBoard extends JFrame {
 	private final int rows, columns;
     private final JPanel board;
     private List<Tile> tiles = new ArrayList<>();
+    private final Player myPlayer;
 	
 	private SelectionManager selectionManager = new SelectionManager();
 
-    public PuzzleBoard(final int rows, final int columns, final String imagePath) {
+    public PuzzleBoard(final int rows, final int columns, final String imagePath, final Player myPlayer) {
     	this.rows = rows;
 		this.columns = columns;
+		this.myPlayer = myPlayer;
 
     	setTitle("Puzzle");
         setResizable(false);
@@ -99,11 +103,15 @@ public class PuzzleBoard extends JFrame {
             board.add(btn);
             btn.setBorder(BorderFactory.createLineBorder(selectedTile.isPresent() && tile == selectedTile.get() ? Color.red : Color.gray));
             btn.addActionListener(actionListener -> {
-            	selectionManager.selectTile(tile, () -> {
-            		paintPuzzle();
-                	checkSolution();
-                    //TODO aggiornare gli altri
-            	});
+                try {
+                    selectionManager.selectTile(tile, () -> {
+                        paintPuzzle();
+                        checkSolution();
+                        this.myPlayer.updateFromBoard(this.getCurrentPositions());
+                    });
+                } catch (RemoteException e) {
+                    e.printStackTrace();
+                }
             });
     	});
     	

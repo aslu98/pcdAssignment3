@@ -1,12 +1,13 @@
 package part2.rmi.puzzle;
 
+import java.rmi.RemoteException;
 import java.util.Optional;
 
 public class SelectionManager {
 
 	private Optional<Tile> selectedTile = Optional.empty();
 
-	public void selectTile(final Tile tile, final Listener listener) {
+	public void selectTile(final Tile tile, final Listener listener) throws RemoteException {
 		
 		if(selectedTile.isPresent()) {
 			swap(selectedTile.get(), tile);
@@ -29,6 +30,6 @@ public class SelectionManager {
 
 	@FunctionalInterface
 	interface Listener{
-		void onSwapPerformed();
+		void onSwapPerformed() throws RemoteException;
 	}
 }

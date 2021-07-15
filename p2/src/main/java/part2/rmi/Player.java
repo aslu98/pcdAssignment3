@@ -17,6 +17,7 @@ public class Player {
     private boolean idFound = false;
     private Registry registry;
     private PuzzleBoard board;
+    private PlayerStateService playerObj;
     private List<PlayerStateService> otherPlayersObjs;
 
     public Player(final int n, final int m, final String imagePath) {
@@ -27,7 +28,7 @@ public class Player {
         try {
             this.registry = LocateRegistry.getRegistry(host);
             this.setId();
-            this.board = new PuzzleBoard(n, m , imagePath);
+            this.board = new PuzzleBoard(n, m , imagePath, this);
             this.board.setVisible(true);
 
             this.registerService();
@@ -35,6 +36,8 @@ public class Player {
             for (PlayerStateService opState: otherPlayersObjs){
                 System.out.println(opState.getPositions());
             }
+
+            this.initializeBoard();
         } catch (Exception e) {
             System.err.println("Server exception: " + e.toString());
             e.printStackTrace();
@@ -58,7 +61,7 @@ public class Player {
     }
 
     private void registerService() throws RemoteException {
-        PlayerStateService playerObj = new PlayerStateServiceImpl(board.getCurrentPositions());
+        this.playerObj = new PlayerStateServiceImpl(board.getCurrentPositions(), this);
         PlayerStateService playerObjStub  = (PlayerStateService) UnicastRemoteObject.exportObject(playerObj, 0);
         registry.rebind("player" + id, playerObjStub);
         System.out.println("Object player " + id + " registered.");
@@ -80,5 +83,23 @@ public class Player {
                 }
             }
         }
+    }
+
+    private void initializeBoard() throws RemoteException {
+        if (!this.otherPlayersObjs.isEmpty()){
+            board.setCurrentPositions(otherPlayersObjs.get(0).getPositions());
+        }
+    }
+
+    public void updateFromPlayerState(final List<Integer> positions){
+        this.board.setCurrentPositions(positions);
+    }
+
+    public void updateFromBoard(final List<Integer> positions) throws RemoteException {
+        this.discoverOtherPlayers();
+        for (PlayerStateService opState: otherPlayersObjs){
+            opState.updatePositions(positions);
+        }
+        this.playerObj.updatePositions(positions);
     }
 }
