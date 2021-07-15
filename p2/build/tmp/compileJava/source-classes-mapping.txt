@@ -1,5 +1,5 @@
-part2/Peer.java
- part2.Peer
+lab09/actors/integrations/Main.java
+ lab09.actors.integrations.Main
 lab10/rmi/Test01_Client1a.java
  lab10.rmi.Test01_Client1a
 lab09/actors_remote/pingpong/PingMsg.java
@@ -26,8 +26,8 @@ lab10/rmi/MyClass1Impl.java
  lab10.rmi.MyClass1Impl
 part2/messages/accept/NotifyNewPlayerMsg.java
  part2.messages.accept.NotifyNewPlayerMsg
-part2/messages/terminate/PlayerExitMsg.java
- part2.messages.terminate.PlayerExitMsg
+part2/messages/accept/PlayerAcceptedMsg.java
+ part2.messages.accept.PlayerAcceptedMsg
 lab09/actors_remote/hello/HelloMsg.java
  lab09.actors_remote.hello.HelloMsg
 part2/messages/update/UpdateTilesMsg.java
@@ -55,8 +55,8 @@ lab09/actors/hello_typed/BaseMsg.java
  lab09.actors.hello_typed.BaseMsg
 lab10/rmi/Test02_Server2.java
  lab10.rmi.Test02_Server2
-part2/Main.java
- part2.Main
+part2/messages/update/UpdatePlayersMsg.java
+ part2.messages.update.UpdatePlayersMsg
 lab10/rmi/MyClass1.java
  lab10.rmi.MyClass1
 lab10/rmi/HelloService.java
@@ -78,8 +78,8 @@ lab09/actors/integrations/ViewFrame.java
  lab09.actors.integrations.ViewFrame$1
 part2/messages/UniqueIdMsg.java
  part2.messages.UniqueIdMsg
-part2/messages/terminate/PlayerFailMsg.java
- part2.messages.terminate.PlayerFailMsg
+part2/Main.java
+ part2.Main
 lab09/actors/integrations/ViewActor.java
  lab09.actors.integrations.ViewActor
 part2/messages/ack/AckMsg.java
@@ -93,14 +93,14 @@ part2/puzzle/SelectionManager.java
  part2.puzzle.SelectionManager$Listener
 part2/puzzle/Tile.java
  part2.puzzle.Tile
-lab09/actors/integrations/Main.java
- lab09.actors.integrations.Main
-part2/messages/update/UpdatePlayersMsg.java
- part2.messages.update.UpdatePlayersMsg
-part2/messages/accept/PlayerAcceptedMsg.java
- part2.messages.accept.PlayerAcceptedMsg
-part2/Player.java
- part2.Player
 part2/puzzle/PuzzleBoard.java
  part2.puzzle.PuzzleBoard
  part2.puzzle.PuzzleBoard$1
+part2/messages/terminate/PlayerFailMsg.java
+ part2.messages.terminate.PlayerFailMsg
+part2/messages/terminate/PlayerExitMsg.java
+ part2.messages.terminate.PlayerExitMsg
+part2/Player.java
+ part2.Player
+part2/Peer.java
+ part2.Peer

@@ -2,7 +2,6 @@ package part2;
 
 import akka.actor.AbstractActorWithTimers;
 import akka.actor.ActorRef;
-import akka.actor.Terminated;
 import part2.messages.UniqueIdMsg;
 import part2.messages.accept.NewPlayerMsg;
 import part2.messages.accept.NotifyNewPlayerMsg;
@@ -23,7 +22,6 @@ public class Player extends AbstractActorWithTimers{
 	private static final int MAX_ATTEMPTS = 5;
 	private PuzzleBoard board;
 	private List<ActorRef> players;
-	private int myIndex;
 	private Map<String, Integer> unackedMessages;
 
 	@Override
@@ -48,27 +46,28 @@ public class Player extends AbstractActorWithTimers{
 				.match(NewPlayerMsg.class, msg -> {
 					System.out.println("received new player: " + getSender());
 					this.addToPlayers(getSender());
-					getSender().tell(new PlayerAcceptedMsg(this.board.getCurrentPositions()), getSelf());
 				})
 				.match(PlayerAcceptedMsg.class, msg -> {
-					System.out.println("PLAYER ACCEPTED by the distributed system");
+					this.players = msg.getCurrentPlayers();
 					board.setCurrentPositions(msg.getCurrentPositions());
+					System.out.println("PLAYER ACCEPTED by the distributed system");
+					System.out.println("Players: " + msg.getCurrentPlayers());
+					System.out.println("Board: " + msg.getCurrentPositions());
+					this.tellNextPlayer(new UpdatePlayersMsg(this.players));
+					getSender().tell(new AckMsg(msg), getSelf());
 				})
 				.match(UpdatePlayersMsg.class, msg -> {
 					if (!players.equals(msg.getPlayers())){
 						System.out.println("update players from " + getSender() + " - new players: " + msg.getPlayers());
 						this.players = msg.getPlayers();
-						this.myIndex = players.indexOf(getSelf());
 						this.tellNextPlayer(new UpdatePlayersMsg(msg.getPlayers()));
 					} else {
 						System.out.println("update players from " + getSender() + " - Update stopped.");
 					}
 					getSender().tell(new AckMsg(msg), getSelf());
-					System.out.println("Sent ACK to " + getSender() +" for msg " + msg.getUniqueID());
 				})
 				.match(UpdateNextMsg.class, msg -> this.tellNextPlayer(new UpdateTilesMsg(this.board.getCurrentPositions())))
 				.match(UpdateTilesMsg.class, msg -> {
-					this.checkNewPlayer(getSender());
 					if (!board.getCurrentPositions().equals(msg.getCurrentPositions())){
 						System.out.println("update tiles from " + getSender() + " - new tiles: " + msg.getCurrentPositions());
 						board.setCurrentPositions(msg.getCurrentPositions());
@@ -88,15 +87,17 @@ public class Player extends AbstractActorWithTimers{
 					System.out.println("Received ACK from " + getSender() +" for msg " + msg.getPrevMsg().getUniqueID());
 					this.unackedMessages.remove(msg.getPrevMsg().getUniqueID());
 					getTimers().cancel(msg.getPrevMsg().getUniqueID());
-					System.out.println("Unacked after " + this.unackedMessages);
 				})
 				.match(PlayerExitMsg.class, msg -> {
 					System.out.println(getSender() + " EXITED!");
-					this.removeFromPlayers(getSender());
+					this.removeFromPlayers(msg.getExitedActor());
 				})
 				.match(PlayerFailMsg.class, msg -> {
 					System.out.println("CAN'T SEND MESSAGES TO " + getSender() + "!");
-					this.removeFromPlayers(getSender());
+					this.removeFromPlayers(msg.getFailedActor());
+					if (msg.getMsgToSend().getClass() != UpdatePlayersMsg.class){
+						this.tellNextPlayer(msg.getMsgToSend());
+					}
 				})
 				.build();
 	}
@@ -110,13 +111,13 @@ public class Player extends AbstractActorWithTimers{
 	}
 
 	private void addToPlayers(final ActorRef player){
-		final int playerIndex = (myIndex + 1) % players.size();
+		final int playerIndex = (this.players.indexOf(getSelf()) + 1) % players.size();
 		if (playerIndex == 0){
 			this.players.add(player);
 		} else {
 			this.players.add(playerIndex, player);
 		}
-		this.tellNextPlayer(new UpdatePlayersMsg(this.players));
+		this.tellNextPlayer(new PlayerAcceptedMsg(this.board.getCurrentPositions(), this.players));
 	}
 
 	private void removeFromPlayers(final ActorRef player){
@@ -132,7 +133,8 @@ public class Player extends AbstractActorWithTimers{
 			if (unackedMessages.containsKey(msgId)){
 				if (this.unackedMessages.get(msgId) == MAX_ATTEMPTS){
 					getTimers().cancel(msgId);
-					getSelf().tell(new PlayerFailMsg(), nextPlayer);
+					getSelf().tell(new PlayerFailMsg(nextPlayer, message), getSelf());
+					this.unackedMessages.remove(msgId);
 				} else {
 					this.unackedMessages.put(msgId, this.unackedMessages.get(msgId) + 1);
 				}
@@ -144,20 +146,14 @@ public class Player extends AbstractActorWithTimers{
 	}
 
 	private ActorRef getNextPlayer(){
-		return players.get((myIndex + 1) % players.size());
-	}
-
-	private void checkNewPlayer(final ActorRef newPlayer){
-		if (!this.players.contains(newPlayer)){
-			this.addToPlayers(newPlayer);
-		}
+		return players.get((this.players.indexOf(getSelf()) + 1) % players.size());
 	}
 
 	@Override
 	public void postStop() throws Exception {
 		System.out.println("CLOSED.");
 		for (ActorRef p: players){
-			p.tell(new PlayerExitMsg(), getSelf());
+			p.tell(new PlayerExitMsg(getSelf()), getSelf());
 		}
 		super.postStop();
 	}
