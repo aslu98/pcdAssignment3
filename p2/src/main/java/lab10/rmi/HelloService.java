@@ -15,4 +15,6 @@ public interface HelloService extends Remote {
 
     String sayHello(MyClass2 obj) throws RemoteException;
 
+    String update() throws  RemoteException;
+
 }

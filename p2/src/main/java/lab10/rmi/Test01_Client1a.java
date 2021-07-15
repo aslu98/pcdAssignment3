@@ -12,18 +12,17 @@ public class Test01_Client1a {
 
         String host = (args.length < 1) ? null : args[0];
         try {
-            Registry registry = LocateRegistry.getRegistry(host);
+            Registry registry = LocateRegistry.getRegistry(host); //se null prende localhost? + si puà fare con host, port
             HelloService obj = (HelloService) registry.lookup("helloObj");
             
             String response = obj.sayHello();
             System.out.println("response: " + response);
-            
             System.out.println("response: " + obj.sayHello(10));
             
             Message msg = new Message("Cesena 20");
             obj.sayHello(msg);
             
-            System.out.println("done.");
+            System.out.println("done. ");
             
         } catch (Exception e) {
             System.err.println("Client exception: " + e.toString());
