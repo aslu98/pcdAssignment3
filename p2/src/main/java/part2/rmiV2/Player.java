@@ -1,4 +1,8 @@
 package part2.rmiV2;
+import lab10.rmi.HelloService;
+import part2.rmiV1.PlayerStateService;
+
+import java.rmi.ConnectException;
 import java.rmi.NotBoundException;
 import java.rmi.RemoteException;
 import java.rmi.registry.LocateRegistry;
@@ -37,13 +41,14 @@ public class Player {
             this.boardStateObj = (BoardStateService) registry.lookup("BoardState");
             System.out.println(boardStateObj.getPositions());
             boardStateObj.registerBoard(board);
-            System.out.println("BoardState already exists. Board registered.");
+            System.out.println("BoardState already exists. New board registered.");
         } catch (RemoteException | NotBoundException ex) {
-            this.boardStateObj = new BoardStateServiceImpl(this.board.getPositions(), this.board);
+            System.out.println("BoardState did not existed, creating new one.");
+            this.boardStateObj = new BoardStateServiceImpl(this.board);
             BoardStateService boardStateStub = (BoardStateService) UnicastRemoteObject.exportObject(this.boardStateObj, 0);
             registry.rebind("BoardState", boardStateStub);
             System.out.println(boardStateObj.getPositions());
-            System.out.println("BoardState did not existed, created.");
+            System.out.println("BoardState created.");
         }
     }
 
