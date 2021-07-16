@@ -10,7 +10,7 @@ public interface BoardStateService extends Remote {
 
     List<Integer> getPositions() throws RemoteException;
 
-    void update(final List<Integer> positions) throws RemoteException;
+    void update(final List<Integer> positions, BoardWrapper source) throws RemoteException;
 
     void registerBoard(BoardWrapper board) throws RemoteException;
 }

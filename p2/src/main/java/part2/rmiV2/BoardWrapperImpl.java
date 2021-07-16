@@ -17,12 +17,10 @@ public class BoardWrapperImpl implements BoardWrapper{
     @Override
     public void updateBoard(List<Integer> positions) throws RemoteException {
         this.board.setCurrentPositions(positions);
-        System.out.println("update state to board on boardwrapper");
     }
 
     public void updateState(List<Integer> positions) throws RemoteException {
         this.myPlayer.update(positions);
-        System.out.println("update board to state on boardwrapper");
     }
 
     @Override

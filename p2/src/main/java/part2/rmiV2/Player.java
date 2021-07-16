@@ -50,7 +50,7 @@ public class Player {
     public void update(final List<Integer> positions) throws RemoteException {
         try {
             System.out.println("UPDATE: BoardState exists, updated.");
-            this.boardStateObj.update(positions);
+            this.boardStateObj.update(positions, this.board);
         } catch (RemoteException ex) {
             System.out.println("UPDATE: BoardState not found, trying to connect.");
             this.connectToBoardState();
