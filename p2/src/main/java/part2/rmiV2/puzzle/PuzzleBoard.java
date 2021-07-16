@@ -10,7 +10,6 @@ import java.awt.image.CropImageFilter;
 import java.awt.image.FilteredImageSource;
 import java.io.File;
 import java.io.IOException;
-import java.rmi.Remote;
 import java.rmi.RemoteException;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -111,8 +110,6 @@ public class PuzzleBoard extends JFrame{
     private void checkSolution() throws RemoteException {
     	if(tiles.stream().allMatch(Tile::isInRightPlace)) {
     		JOptionPane.showMessageDialog(this, "Puzzle Completed!", "", JOptionPane.INFORMATION_MESSAGE);
-            this.wrapper.updateState(this.getCurrentPositions());
-    		System.exit(0);
     	}
     }
 
