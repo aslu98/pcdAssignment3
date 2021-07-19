@@ -2,18 +2,18 @@ part2/akka/messages/update/UpdatePlayersMsg.java
  part2.akka.messages.update.UpdatePlayersMsg
 part2/akka/puzzle/Tile.java
  part2.akka.puzzle.Tile
-part2/rmiV1/Main.java
- part2.rmiV1.Main
-part2/akka/messages/accept/PlayerAcceptedMsg.java
- part2.akka.messages.accept.PlayerAcceptedMsg
+part2/rmiV2/puzzle/Tile.java
+ part2.rmiV2.puzzle.Tile
+part2/rmiV2/BoardWrapperImpl.java
+ part2.rmiV2.BoardWrapperImpl
 part2/akka/messages/UniqueIdMsg.java
  part2.akka.messages.UniqueIdMsg
 lab10/rmi/Test01_Client1a.java
  lab10.rmi.Test01_Client1a
 part2/akka/Player.java
  part2.akka.Player
-part2/rmiV1/PlayerStateServiceImpl.java
- part2.rmiV1.PlayerStateServiceImpl
+part2/akka/messages/update/UpdateNextMsg.java
+ part2.akka.messages.update.UpdateNextMsg
 lab10/rmi/Test02_Client2.java
  lab10.rmi.Test02_Client2
 lab10/rmi/MyClass2Impl.java
@@ -26,20 +26,20 @@ part2/akka/messages/accept/NotifyNewPlayerMsg.java
  part2.akka.messages.accept.NotifyNewPlayerMsg
 part2/akka/messages/terminate/PlayerFailMsg.java
  part2.akka.messages.terminate.PlayerFailMsg
-part2/rmiV1/exceptions/DuplicateIdException.java
- part2.rmiV1.exceptions.DuplicateIdException
 lab10/rmi/Test01_Server.java
  lab10.rmi.Test01_Server
 lab10/rmi/Message.java
  lab10.rmi.Message
 lab10/rmi/MyClass1Impl.java
  lab10.rmi.MyClass1Impl
-part2/rmiV1/Player.java
- part2.rmiV1.Player
+part2/akka/messages/accept/PlayerAcceptedMsg.java
+ part2.akka.messages.accept.PlayerAcceptedMsg
 part2/rmiV2/Main.java
  part2.rmiV2.Main
 part2/rmiV2/Player.java
  part2.rmiV2.Player
+part2/rmiV1/DuplicateIdException.java
+ part2.rmiV1.DuplicateIdException
 part2/akka/puzzle/SelectionManager.java
  part2.akka.puzzle.SelectionManager
  part2.akka.puzzle.SelectionManager$Listener
@@ -70,8 +70,8 @@ lab10/rmi/HelloService.java
  lab10.rmi.HelloService
 part2/rmiV1/puzzle/Tile.java
  part2.rmiV1.puzzle.Tile
-part2/rmiV1/puzzle/PuzzleBoard.java
- part2.rmiV1.puzzle.PuzzleBoard
+part2/rmiV2/puzzle/PuzzleBoard.java
+ part2.rmiV2.puzzle.PuzzleBoard
 part2/rmiV2/puzzle/TileButton.java
  part2.rmiV2.puzzle.TileButton
  part2.rmiV2.puzzle.TileButton$1
@@ -99,13 +99,13 @@ part2/rmiV1/puzzle/TileButton.java
  part2.rmiV1.puzzle.TileButton$1
 lab10/rmi/HelloServiceImpl.java
  lab10.rmi.HelloServiceImpl
-part2/rmiV2/puzzle/Tile.java
- part2.rmiV2.puzzle.Tile
+part2/rmiV1/Player.java
+ part2.rmiV1.Player
+part2/rmiV1/Main.java
+ part2.rmiV1.Main
+part2/rmiV1/PlayerStateServiceImpl.java
+ part2.rmiV1.PlayerStateServiceImpl
+part2/rmiV1/puzzle/PuzzleBoard.java
+ part2.rmiV1.puzzle.PuzzleBoard
 part2/rmiV1/PlayerStateService.java
  part2.rmiV1.PlayerStateService
-part2/akka/messages/update/UpdateNextMsg.java
- part2.akka.messages.update.UpdateNextMsg
-part2/rmiV2/BoardWrapperImpl.java
- part2.rmiV2.BoardWrapperImpl
-part2/rmiV2/puzzle/PuzzleBoard.java
- part2.rmiV2.puzzle.PuzzleBoard

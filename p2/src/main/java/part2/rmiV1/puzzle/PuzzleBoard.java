@@ -10,10 +10,8 @@ import java.awt.image.FilteredImageSource;
 import java.io.File;
 import java.io.IOException;
 import java.rmi.RemoteException;
-import java.util.ArrayList;
-import java.util.Collections;
+import java.util.*;
 import java.util.List;
-import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
@@ -94,7 +92,7 @@ public class PuzzleBoard extends JFrame {
                     selectionManager.selectTile(tile, () -> {
                         paintPuzzle();
                         checkSolution();
-                        this.myPlayer.updateFromBoard(this.getCurrentPositions());
+                        this.myPlayer.updateFromBoard(this.getCurrentPositions(), new Date().getTime());
                     });
                 } catch (RemoteException e) {
                     e.printStackTrace();
@@ -109,8 +107,6 @@ public class PuzzleBoard extends JFrame {
     private void checkSolution() throws RemoteException {
     	if(tiles.stream().allMatch(Tile::isInRightPlace)) {
     		JOptionPane.showMessageDialog(this, "Puzzle Completed!", "", JOptionPane.INFORMATION_MESSAGE);
-            this.myPlayer.updateFromBoard(this.getCurrentPositions());
-    		System.exit(0);
     	}
     }
 

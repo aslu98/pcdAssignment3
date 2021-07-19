@@ -1,5 +1,4 @@
 package part2.rmiV1;
-import part2.rmiV1.exceptions.DuplicateIdException;
 import part2.rmiV1.puzzle.PuzzleBoard;
 
 import java.rmi.ConnectException;
@@ -16,8 +15,8 @@ public class Player {
     private static final int MAX_ID = 3;
     private final int n;
     private final int m;
+    private final String imagePath;
     private int id = 0;
-    private boolean idFound = false;
     private Registry registry;
     private PuzzleBoard board;
     private PlayerStateService playerObj;
@@ -31,10 +30,10 @@ public class Player {
     public Player(final int n, final int m, final String imagePath, String host) {
         this.n = n;
         this.m = m;
+        this.imagePath = imagePath;
+
         try {
             this.registry = LocateRegistry.getRegistry(host);
-            this.board = new PuzzleBoard(n, m, imagePath, this);
-            this.board.setVisible(true);
             this.initializeService();
         } catch (Exception e) {
             System.err.println("Server exception: " + e.toString());
@@ -43,6 +42,7 @@ public class Player {
     }
 
     private synchronized void setId() throws RemoteException {
+        boolean idFound = false;
         while (!idFound){
             id = id + 1;
             if (id > MAX_ID){
@@ -56,6 +56,11 @@ public class Player {
                 idFound = true;
             }
         }
+    }
+
+    private void initiliazeBoard(){
+        this.board = new PuzzleBoard(n, m, imagePath, this);
+        this.board.setVisible(true);
     }
 
     private void registerService() throws RemoteException {
@@ -74,13 +79,12 @@ public class Player {
             try {
                 PlayerStateService otherPlayerObj = (PlayerStateService) registry.lookup("player" + searchId);
                 otherPlayerObj.getPositions();
-                if (searchId == id)
-                    if (otherPlayerObj.hashCode() != this.playerStub.hashCode()){
-                    throw new DuplicateIdException();
+                if (searchId == id) {
+                    if (otherPlayerObj.hashCode() != this.playerStub.hashCode())
+                        throw new DuplicateIdException();
                 } else {
-                    System.out.println("Discovery: id " +  searchId + " found.");
-                    this.otherPlayersObjs.add(otherPlayerObj);
-                }
+                System.out.println("Discovery: id " +  searchId + " found.");
+                this.otherPlayersObjs.add(otherPlayerObj);}
             } catch (NotBoundException | RemoteException ex) {
                 System.out.println("Discovery: id " +  searchId + " not found.");
             } catch (DuplicateIdException ex){
@@ -92,6 +96,7 @@ public class Player {
 
     private void initializeService() throws RemoteException {
         this.setId();
+        this.initiliazeBoard();
         this.registerService();
         this.discoverOtherPlayers();
         if (!this.otherPlayersObjs.isEmpty()){
@@ -101,21 +106,17 @@ public class Player {
             }
             board.setCurrentPositions(otherPlayersObjs.get(0).getPositions());
         }
-
-        for (PlayerStateService opState: otherPlayersObjs){
-            System.out.println(opState.getPositions());
-        }
     }
 
     public void updateFromPlayerState(final List<Integer> positions) throws RemoteException {
         this.board.setCurrentPositions(positions);
     }
 
-    public void updateFromBoard(final List<Integer> positions) throws RemoteException {
+    public void updateFromBoard(final List<Integer> positions, final Long moment) throws RemoteException {
         this.discoverOtherPlayers();
         for (PlayerStateService opState: otherPlayersObjs){
-            opState.updatePositions(positions);
+            opState.updatePositions(positions, moment);
         }
-        this.playerObj.updatePositions(positions);
+        this.playerObj.updatePositions(positions, moment);
     }
 }
